@@ -103,13 +103,15 @@ class TimerDisplay extends StatelessWidget {
     final intervalColor = _getIntervalColor(intervalType);
     
     final screenHeight = constraints.maxHeight;
-    final timerFontSize = (screenHeight * 0.5).clamp(80.0, 180.0);
-    final exerciseFontSize = (screenHeight * 0.12).clamp(28.0, 48.0);
-    final repsFontSize = (screenHeight * 0.09).clamp(20.0, 36.0);
+    final timerFontSize = (screenHeight * 0.7).clamp(80.0, 300.0);
+    final exerciseFontSize = (screenHeight * 0.2).clamp(36.0, 80.0);
+    final repsFontSize = (screenHeight * 0.18).clamp(28.0, 70.0);
+    final repsNumberFontSize = repsFontSize * 1.4;
+    final repsTextFontSize = repsFontSize * 0.75;
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Row(
           children: [
             // Кнопка "Предыдущий" при паузе
@@ -131,19 +133,22 @@ class TimerDisplay extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    _formatSeconds(currentTime),
-                    style: TextStyle(
-                      fontSize: timerFontSize,
-                      fontWeight: FontWeight.w900,
-                      color: intervalColor,
-                      shadows: [
-                        Shadow(
-                          color: intervalColor.withOpacity(0.4),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      _formatSeconds(currentTime),
+                      style: TextStyle(
+                        fontSize: timerFontSize,
+                        fontWeight: FontWeight.w900,
+                        color: intervalColor,
+                        shadows: [
+                          Shadow(
+                            color: intervalColor.withOpacity(0.4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   if (isManualInterval)
@@ -170,33 +175,60 @@ class TimerDisplay extends StatelessWidget {
                     if (currentInterval != null &&
                         currentInterval!.type == IntervalType.work &&
                         currentInterval!.name != null) ...[
-                      Text(
-                        currentInterval!.name!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: exerciseFontSize,
-                          fontWeight: FontWeight.bold,
-                          color: intervalColor,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          currentInterval!.name!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: exerciseFontSize,
+                            fontWeight: FontWeight.bold,
+                            color: intervalColor,
+                          ),
                         ),
                       ),
                       if (currentInterval!.repetitions != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          '${currentInterval!.repetitions} повторений${currentInterval!.weight != null && currentInterval!.weight! > 0 ? ' × ${currentInterval!.weight!.toStringAsFixed(1)} кг' : ''}',
-                          style: TextStyle(
-                            fontSize: repsFontSize,
-                            color: intervalColor.withOpacity(0.9),
-                            fontWeight: FontWeight.w700,
+                        const SizedBox(height: 2),
+                        RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '${currentInterval!.repetitions}',
+                                style: TextStyle(
+                                  fontSize: repsNumberFontSize,
+                                  color: intervalColor.withOpacity(0.9),
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              TextSpan(
+                                text: ' пвт.',
+                                style: TextStyle(
+                                  fontSize: repsTextFontSize,
+                                  color: intervalColor.withOpacity(0.9),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              if (currentInterval!.weight != null && currentInterval!.weight! > 0)
+                                TextSpan(
+                                  text: ' × ${currentInterval!.weight!.toStringAsFixed(1)} кг',
+                                  style: TextStyle(
+                                    fontSize: repsNumberFontSize,
+                                    color: intervalColor.withOpacity(0.9),
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ] else if (currentInterval!.weight != null && currentInterval!.weight! > 0) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           '${currentInterval!.weight!.toStringAsFixed(1)} кг',
                           style: TextStyle(
-                            fontSize: repsFontSize,
+                            fontSize: repsNumberFontSize,
                             color: intervalColor.withOpacity(0.9),
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ],
@@ -211,7 +243,7 @@ class TimerDisplay extends StatelessWidget {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     // Интервал и время
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -246,7 +278,7 @@ class TimerDisplay extends StatelessWidget {
                     ),
                     // Следующие интервалы
                     if (nextIntervals != null && nextIntervals!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -292,7 +324,7 @@ class TimerDisplay extends StatelessWidget {
                     // Статистика по повторениям
                     if (completedRepetitions != null && remainingRepetitions != null &&
                         (completedRepetitions!.isNotEmpty || remainingRepetitions!.isNotEmpty)) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Wrap(
                         spacing: 10,
                         runSpacing: 4,
@@ -313,9 +345,9 @@ class TimerDisplay extends StatelessWidget {
                       ),
                     ],
                     // Прогресс
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(6),
                         child: LinearProgressIndicator(
@@ -356,7 +388,7 @@ class TimerDisplay extends StatelessWidget {
     }
     
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(12),
@@ -463,13 +495,15 @@ class TimerDisplay extends StatelessWidget {
     final intervalColor = _getIntervalColor(intervalType);
     
     final screenHeight = constraints.maxHeight;
-    final timerFontSize = (screenHeight * 0.2).clamp(80.0, 140.0);
-    final exerciseFontSize = (screenHeight * 0.06).clamp(28.0, 44.0);
-    final repsFontSize = (screenHeight * 0.045).clamp(20.0, 32.0);
+    final timerFontSize = (screenHeight * 0.35).clamp(80.0, 220.0);
+    final exerciseFontSize = (screenHeight * 0.12).clamp(36.0, 70.0);
+    final repsFontSize = (screenHeight * 0.1).clamp(24.0, 60.0);
+    final repsNumberFontSize = repsFontSize * 1.4;
+    final repsTextFontSize = repsFontSize * 0.75;
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(6),
         child: Row(
           children: [
             // Кнопка "Предыдущий" при паузе
@@ -501,19 +535,22 @@ class TimerDisplay extends StatelessWidget {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                _formatSeconds(currentTime),
-                                style: TextStyle(
-                                  fontSize: timerFontSize,
-                                  fontWeight: FontWeight.w900,
-                                  color: intervalColor,
-                                  shadows: [
-                                    Shadow(
-                                      color: intervalColor.withOpacity(0.4),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  _formatSeconds(currentTime),
+                                  style: TextStyle(
+                                    fontSize: timerFontSize,
+                                    fontWeight: FontWeight.w900,
+                                    color: intervalColor,
+                                    shadows: [
+                                      Shadow(
+                                        color: intervalColor.withOpacity(0.4),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                               if (isManualInterval)
@@ -538,23 +575,50 @@ class TimerDisplay extends StatelessWidget {
                                 if (currentInterval != null &&
                                     currentInterval!.type == IntervalType.work &&
                                     currentInterval!.name != null) ...[
-                                  Text(
-                                    currentInterval!.name!,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: exerciseFontSize,
-                                      fontWeight: FontWeight.bold,
-                                      color: intervalColor,
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      currentInterval!.name!,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: exerciseFontSize,
+                                        fontWeight: FontWeight.bold,
+                                        color: intervalColor,
+                                      ),
                                     ),
                                   ),
                                   if (currentInterval!.repetitions != null) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${currentInterval!.repetitions} повторений${currentInterval!.weight != null && currentInterval!.weight! > 0 ? ' × ${currentInterval!.weight!.toStringAsFixed(1)} кг' : ''}',
-                                      style: TextStyle(
-                                        fontSize: repsFontSize,
-                                        color: intervalColor.withOpacity(0.9),
-                                        fontWeight: FontWeight.w700,
+                                    const SizedBox(height: 2),
+                                    RichText(
+                                      textAlign: TextAlign.center,
+                                      text: TextSpan(
+                                        children: [
+                                          TextSpan(
+                                            text: '${currentInterval!.repetitions}',
+                                            style: TextStyle(
+                                              fontSize: repsNumberFontSize,
+                                              color: intervalColor.withOpacity(0.9),
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: ' пвт.',
+                                            style: TextStyle(
+                                              fontSize: repsTextFontSize,
+                                              color: intervalColor.withOpacity(0.9),
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          if (currentInterval!.weight != null && currentInterval!.weight! > 0)
+                                            TextSpan(
+                                              text: ' × ${currentInterval!.weight!.toStringAsFixed(1)} кг',
+                                              style: TextStyle(
+                                                fontSize: repsNumberFontSize,
+                                                color: intervalColor.withOpacity(0.9),
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                     ),
                                   ],
@@ -569,7 +633,7 @@ class TimerDisplay extends StatelessWidget {
                                     ),
                                   ),
                                 ],
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 4),
                                 // Интервал и время
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -619,7 +683,7 @@ class TimerDisplay extends StatelessWidget {
                         Expanded(
                           flex: 3,
                           child: Padding(
-                            padding: const EdgeInsets.only(right: 8, top: 8),
+                            padding: const EdgeInsets.only(right: 4, top: 4),
                             child: _buildIntervalsChart(intervalColor),
                           ),
                         ),
@@ -627,7 +691,7 @@ class TimerDisplay extends StatelessWidget {
                         Expanded(
                           flex: 2,
                           child: Padding(
-                            padding: const EdgeInsets.only(left: 8, top: 8),
+                            padding: const EdgeInsets.only(left: 4, top: 4),
                             child: SingleChildScrollView(
                               child: Column(
                                 children: [
@@ -700,7 +764,7 @@ class TimerDisplay extends StatelessWidget {
                                         ],
                                       ),
                                     ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 4),
                                   // Статистика по упражнениям
                                   if (completedRepetitions != null && remainingRepetitions != null &&
                                       (completedRepetitions!.isNotEmpty || remainingRepetitions!.isNotEmpty))
@@ -754,7 +818,7 @@ class TimerDisplay extends StatelessWidget {
                   
                   // Прогресс-бар внизу
                   Padding(
-                    padding: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.only(top: 4),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(6),
                       child: LinearProgressIndicator(
@@ -797,76 +861,111 @@ class TimerDisplay extends StatelessWidget {
         builder: (context, constraints) {
           // Адаптивные размеры шрифтов в зависимости от высоты экрана
           final screenHeight = constraints.maxHeight;
-          final timerFontSize = (screenHeight * 0.40).clamp(160.0, 300.0);
-          final exerciseFontSize = (screenHeight * 0.07).clamp(36.0, 64.0);
-          final repsFontSize = (screenHeight * 0.05).clamp(28.0, 48.0);
+          final timerFontSize = (screenHeight * 0.55).clamp(160.0, 450.0);
+          final exerciseFontSize = (screenHeight * 0.14).clamp(36.0, 90.0);
+          final repsFontSize = (screenHeight * 0.12).clamp(28.0, 75.0);
+          final repsNumberFontSize = repsFontSize * 1.4;
+          final repsTextFontSize = repsFontSize * 0.75;
           
           return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: 2),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 // Основной дисплей времени - ТОЛЬКО СЕКУНДЫ, очень крупно
-                Text(
-                  _formatSeconds(currentTime),
-                  style: TextStyle(
-                    fontSize: timerFontSize,
-                    fontWeight: FontWeight.w900,
-                    color: intervalColor,
-                    shadows: [
-                      Shadow(
-                        color: intervalColor.withOpacity(0.4),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      _formatSeconds(currentTime),
+                      style: TextStyle(
+                        fontSize: timerFontSize,
+                        fontWeight: FontWeight.w900,
+                        color: intervalColor,
+                        shadows: [
+                          Shadow(
+                            color: intervalColor.withOpacity(0.4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
                 if (isManualInterval)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
+                    padding: const EdgeInsets.only(top: 2.0),
                     child: Text(
                       'РУЧНОЙ РЕЖИМ',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         color: Colors.orange[700],
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2,
                       ),
                     ),
                   ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 // Название упражнения и количество повторений - КРУПНО
                 if (currentInterval != null &&
                     currentInterval!.type == IntervalType.work &&
                     currentInterval!.name != null) ...[
-                  Text(
-                    currentInterval!.name!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: exerciseFontSize,
-                      fontWeight: FontWeight.bold,
-                      color: intervalColor,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      currentInterval!.name!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: exerciseFontSize,
+                        fontWeight: FontWeight.bold,
+                        color: intervalColor,
+                      ),
                     ),
                   ),
                   if (currentInterval!.repetitions != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '${currentInterval!.repetitions} повторений${currentInterval!.weight != null && currentInterval!.weight! > 0 ? ' × ${currentInterval!.weight!.toStringAsFixed(1)} кг' : ''}',
-                      style: TextStyle(
-                        fontSize: repsFontSize,
-                        color: intervalColor.withOpacity(0.9),
-                        fontWeight: FontWeight.w700,
+                    const SizedBox(height: 2),
+                    RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '${currentInterval!.repetitions}',
+                            style: TextStyle(
+                              fontSize: repsNumberFontSize,
+                              color: intervalColor.withOpacity(0.9),
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          TextSpan(
+                            text: ' пвт.',
+                            style: TextStyle(
+                              fontSize: repsTextFontSize,
+                              color: intervalColor.withOpacity(0.9),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          if (currentInterval!.weight != null && currentInterval!.weight! > 0)
+                            TextSpan(
+                              text: ' × ${currentInterval!.weight!.toStringAsFixed(1)} кг',
+                              style: TextStyle(
+                                fontSize: repsNumberFontSize,
+                                color: intervalColor.withOpacity(0.9),
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ] else if (currentInterval!.weight != null && currentInterval!.weight! > 0) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       '${currentInterval!.weight!.toStringAsFixed(1)} кг',
                       style: TextStyle(
-                        fontSize: repsFontSize,
+                        fontSize: repsNumberFontSize,
                         color: intervalColor.withOpacity(0.9),
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                   ],
@@ -882,10 +981,10 @@ class TimerDisplay extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 // Индикатор интервала
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
                     color: intervalColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(20),
@@ -901,7 +1000,7 @@ class TimerDisplay extends StatelessWidget {
                 ),
                 // Общее время (прошло/осталось)
                 if (totalElapsedTime != null && totalRemainingTime != null) ...[
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -935,10 +1034,10 @@ class TimerDisplay extends StatelessWidget {
                 // Статистика по повторениям (компактная)
                 if (completedRepetitions != null && remainingRepetitions != null &&
                     (completedRepetitions!.isNotEmpty || remainingRepetitions!.isNotEmpty)) ...[
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
                       borderRadius: BorderRadius.circular(12),
@@ -985,10 +1084,10 @@ class TimerDisplay extends StatelessWidget {
                 ],
                 // Следующие интервалы (компактная карточка)
                 if (nextIntervals != null && nextIntervals!.isNotEmpty) ...[
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
                       borderRadius: BorderRadius.circular(12),
@@ -1055,10 +1154,10 @@ class TimerDisplay extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 // Прогресс-бар
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: LinearProgressIndicator(

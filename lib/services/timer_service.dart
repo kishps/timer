@@ -318,20 +318,29 @@ class TimerService {
   void _saveCurrentIntervalStat() {
     if (_currentInterval == null) return;
     
+    int actualDuration;
+    
     // Для ручных интервалов проверяем _manualIntervalStartTime, для обычных - _currentIntervalStartTime
     if (_currentInterval!.duration == null || _currentInterval!.duration == 0) {
       // Ручной интервал
-      if (_manualIntervalStartTime == null) return;
+      if (_manualIntervalStartTime == null) {
+        // Если время начала не установлено, устанавливаем его сейчас и считаем, что прошло 0 секунд
+        // Это может произойти, если пользователь перешел к интервалу до запуска таймера
+        _manualIntervalStartTime = DateTime.now();
+        actualDuration = 0;
+      } else {
+        // Используем getManualIntervalElapsedTime() для получения актуального прошедшего времени
+        actualDuration = getManualIntervalElapsedTime();
+      }
     } else {
       // Обычный интервал
-      if (_currentIntervalStartTime == null) return;
+      if (_currentIntervalStartTime == null) {
+        // Если время начала не установлено, не сохраняем статистику
+        return;
+      }
+      // Вычисляем разницу между запланированным и оставшимся временем
+      actualDuration = (_currentInterval!.duration ?? 0) - _currentTime;
     }
-    
-    // Для ручных интервалов используем currentTime (который уже содержит прошедшее время)
-    // Для обычных интервалов вычисляем разницу между запланированным и оставшимся временем
-    final actualDuration = (_currentInterval!.duration == null || _currentInterval!.duration == 0)
-        ? _currentTime  // Для ручных интервалов currentTime уже содержит прошедшее время
-        : ((_currentInterval!.duration ?? 0) - _currentTime);
     
     // Проверяем, не сохранили ли мы уже статистику для этого интервала
     final existingIndex = _intervalStats.indexWhere(
@@ -412,9 +421,20 @@ class TimerService {
 
   int getElapsedTime() {
     int elapsed = 0;
+    
+    // Используем сохраненную статистику для завершенных интервалов
     for (int i = 0; i < _currentIntervalIndex && i < _intervals.length; i++) {
-      elapsed += _intervals[i].duration ?? 0;
+      // Ищем статистику для этого интервала
+      final statIndex = _intervalStats.indexWhere((s) => s.intervalIndex == i);
+      if (statIndex >= 0) {
+        // Используем реальное время выполнения из статистики (включая ручные интервалы)
+        elapsed += _intervalStats[statIndex].actualDuration;
+      } else {
+        // Если статистика еще не сохранена, используем запланированное время
+        elapsed += _intervals[i].duration ?? 0;
+      }
     }
+    
     // Если тренировка не завершена, добавляем время текущего интервала
     if (_currentIntervalIndex < _intervals.length) {
       final currentInterval = _intervals[_currentIntervalIndex];
@@ -425,6 +445,7 @@ class TimerService {
         elapsed += currentInterval.duration! - _currentTime;
       }
     }
+    
     return elapsed;
   }
 
@@ -508,8 +529,9 @@ class TimerService {
   void nextInterval() {
     if (_intervals.isEmpty) return;
     
-    // Если это последний интервал, завершаем тренировку (статистика сохранится в _finishWorkout)
+    // Если это последний интервал, сохраняем статистику перед завершением
     if (_currentIntervalIndex >= _intervals.length - 1) {
+      _saveCurrentIntervalStat();
       _finishWorkout();
       return;
     }

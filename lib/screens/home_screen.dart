@@ -128,6 +128,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final totalWeight = _timerService.totalWeight;
     final intervalStats = _timerService.intervalStats;
 
+    // Вычисляем общую длительность на основе реального времени всех интервалов
+    int totalDuration;
+    if (intervalStats.isNotEmpty) {
+      // Суммируем actualDuration всех интервалов, включая ручные
+      totalDuration = intervalStats.fold<int>(
+        0,
+        (sum, stat) => sum + stat.actualDuration,
+      );
+    } else {
+      // Fallback на getElapsedTime, если статистика еще не собрана
+      totalDuration = _timerService.getElapsedTime();
+    }
+
     WorkoutSession session;
     
     if (template != null) {
@@ -147,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       session = WorkoutSession(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         dateTime: DateTime.now(),
-        totalDuration: _timerService.getElapsedTime(),
+        totalDuration: totalDuration,
         rounds: template.intervals.length,
         workDuration: 0, // Не используется для шаблонов
         restDuration: 0, // Не используется для шаблонов
@@ -164,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       session = WorkoutSession(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         dateTime: DateTime.now(),
-        totalDuration: _timerService.getElapsedTime(),
+        totalDuration: totalDuration,
         rounds: _config!.rounds,
         workDuration: _config!.workDuration,
         restDuration: _config!.restDuration,

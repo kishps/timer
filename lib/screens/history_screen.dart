@@ -225,7 +225,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (session.intervalStats != null && 
-                                session.intervalStats!.where((stat) => stat.type == IntervalType.work).isNotEmpty)
+                                session.intervalStats!.isNotEmpty)
                               IconButton(
                                 icon: Icon(
                                   isExpanded ? Icons.expand_less : Icons.expand_more,
@@ -248,7 +248,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ],
                         ),
                         children: session.intervalStats != null && 
-                            session.intervalStats!.where((stat) => stat.type == IntervalType.work).isNotEmpty
+                            session.intervalStats!.isNotEmpty
                             ? [
                                 Padding(
                                   padding: const EdgeInsets.all(16.0),
@@ -263,8 +263,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 12),
-                                      ...session.intervalStats!
-                                          .where((stat) => stat.type == IntervalType.work)
+                                      ...(session.intervalStats!..sort((a, b) => a.intervalIndex.compareTo(b.intervalIndex)))
                                           .map((stat) {
                                         return _buildIntervalStatCard(stat);
                                       }),
@@ -349,14 +348,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Запланировано: ${_formatSeconds(stat.plannedDuration)}',
+                  stat.type == IntervalType.work 
+                      ? 'Запланировано: ${_formatSeconds(stat.plannedDuration)}'
+                      : stat.plannedDuration > 0
+                          ? 'Запланировано: ${_formatSeconds(stat.plannedDuration)}'
+                          : 'Без ограничения времени',
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 12,
                   ),
                 ),
                 Text(
-                  'Выполнено: ${_formatSeconds(stat.actualDuration)}',
+                  stat.type == IntervalType.work
+                      ? 'Выполнено: ${_formatSeconds(stat.actualDuration)}'
+                      : 'Время отдыха: ${_formatSeconds(stat.actualDuration)}',
                   style: TextStyle(
                     color: stat.actualDuration > 0 ? Colors.green : Colors.grey,
                     fontSize: 12,
