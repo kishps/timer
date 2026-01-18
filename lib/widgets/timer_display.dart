@@ -1,0 +1,1080 @@
+import 'package:flutter/material.dart';
+import '../models/workout_interval.dart';
+
+class TimerDisplay extends StatelessWidget {
+  final int currentTime;
+  final WorkoutInterval? currentInterval;
+  final int currentIntervalIndex;
+  final int totalIntervals;
+  final int totalDuration;
+  final int elapsedTime;
+  final double progress;
+  final Map<String, int>? completedRepetitions;
+  final Map<String, int>? remainingRepetitions;
+  final List<WorkoutInterval>? nextIntervals;
+  final int? totalElapsedTime;
+  final int? totalRemainingTime;
+  final bool isManualInterval;
+  final int? manualElapsedTime;
+  
+  // Параметры для кнопок переключения интервалов
+  final bool isPaused;
+  final bool canGoPrevious;
+  final bool canGoNext;
+  final VoidCallback? onPreviousInterval;
+  final VoidCallback? onNextInterval;
+  
+  // Все интервалы для графика (квадратный экран)
+  final List<WorkoutInterval>? allIntervals;
+
+  const TimerDisplay({
+    super.key,
+    required this.currentTime,
+    required this.currentInterval,
+    required this.currentIntervalIndex,
+    required this.totalIntervals,
+    required this.totalDuration,
+    required this.elapsedTime,
+    required this.progress,
+    this.completedRepetitions,
+    this.remainingRepetitions,
+    this.nextIntervals,
+    this.totalElapsedTime,
+    this.totalRemainingTime,
+    this.isManualInterval = false,
+    this.manualElapsedTime,
+    this.isPaused = false,
+    this.canGoPrevious = false,
+    this.canGoNext = false,
+    this.onPreviousInterval,
+    this.onNextInterval,
+    this.allIntervals,
+  });
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+
+  // Только секунды для большого дисплея
+  String _formatSeconds(int seconds) {
+    return seconds.toString();
+  }
+
+  Color _getIntervalColor(IntervalType type) {
+    switch (type) {
+      case IntervalType.work:
+        return const Color(0xFFE53935); // Более насыщенный красный
+      case IntervalType.rest:
+        return const Color(0xFF43A047); // Более насыщенный зеленый
+      case IntervalType.restBetweenSets:
+        return const Color(0xFF1E88E5); // Более насыщенный синий
+    }
+  }
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
+        final aspectRatio = width / height;
+        
+        // Определяем тип экрана по соотношению сторон
+        final isSquare = aspectRatio >= 0.8 && aspectRatio <= 1.3;
+        final isLandscape = aspectRatio > 1.3;
+        
+        if (isSquare) {
+          return _buildSquareLayout(constraints);
+        } else if (isLandscape) {
+          return _buildLandscapeLayout(constraints);
+        } else {
+          return _buildVerticalLayout();
+        }
+      },
+    );
+  }
+
+  Widget _buildLandscapeLayout(BoxConstraints constraints) {
+    final intervalType = currentInterval?.type ?? IntervalType.work;
+    final intervalColor = _getIntervalColor(intervalType);
+    
+    final screenHeight = constraints.maxHeight;
+    final timerFontSize = (screenHeight * 0.5).clamp(80.0, 180.0);
+    final exerciseFontSize = (screenHeight * 0.12).clamp(28.0, 48.0);
+    final repsFontSize = (screenHeight * 0.09).clamp(20.0, 36.0);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Row(
+          children: [
+            // Кнопка "Предыдущий" при паузе
+            if (isPaused)
+              SizedBox(
+                width: 48,
+                child: IconButton(
+                  onPressed: canGoPrevious ? onPreviousInterval : null,
+                  icon: const Icon(Icons.chevron_left),
+                  iconSize: 40,
+                  color: Colors.blue,
+                ),
+              )
+            else
+              const SizedBox(width: 48),
+            // Левая часть - таймер (только секунды)
+            Expanded(
+              flex: 2,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _formatSeconds(currentTime),
+                    style: TextStyle(
+                      fontSize: timerFontSize,
+                      fontWeight: FontWeight.w900,
+                      color: intervalColor,
+                      shadows: [
+                        Shadow(
+                          color: intervalColor.withOpacity(0.4),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isManualInterval)
+                    Text(
+                      'РУЧНОЙ',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.orange[700],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            // Правая часть - информация
+            Expanded(
+              flex: 3,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Название упражнения и повторения
+                    if (currentInterval != null &&
+                        currentInterval!.type == IntervalType.work &&
+                        currentInterval!.name != null) ...[
+                      Text(
+                        currentInterval!.name!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: exerciseFontSize,
+                          fontWeight: FontWeight.bold,
+                          color: intervalColor,
+                        ),
+                      ),
+                      if (currentInterval!.repetitions != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${currentInterval!.repetitions} повторений${currentInterval!.weight != null && currentInterval!.weight! > 0 ? ' × ${currentInterval!.weight!.toStringAsFixed(1)} кг' : ''}',
+                          style: TextStyle(
+                            fontSize: repsFontSize,
+                            color: intervalColor.withOpacity(0.9),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ] else if (currentInterval!.weight != null && currentInterval!.weight! > 0) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${currentInterval!.weight!.toStringAsFixed(1)} кг',
+                          style: TextStyle(
+                            fontSize: repsFontSize,
+                            color: intervalColor.withOpacity(0.9),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ] else if (currentInterval != null && currentInterval!.type != IntervalType.work) ...[
+                      Text(
+                        currentInterval!.type == IntervalType.rest ? 'ОТДЫХ' : 'ОТДЫХ МЕЖДУ СЕТАМИ',
+                        style: TextStyle(
+                          fontSize: exerciseFontSize,
+                          fontWeight: FontWeight.bold,
+                          color: intervalColor,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    // Интервал и время
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: intervalColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            '${currentIntervalIndex + 1} / $totalIntervals',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: intervalColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (totalElapsedTime != null && totalRemainingTime != null) ...[
+                          const SizedBox(width: 12),
+                          Text(
+                            '${_formatTime(totalElapsedTime!)} / ${_formatTime(totalElapsedTime! + totalRemainingTime!)}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    // Следующие интервалы
+                    if (nextIntervals != null && nextIntervals!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Далее: ',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          ...nextIntervals!.take(2).map((interval) {
+                            final color = _getIntervalColor(interval.type);
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: color,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${interval.displayName}${interval.type == IntervalType.work && interval.repetitions != null ? ' ×${interval.repetitions}' : ''}${interval.weight != null && interval.weight! > 0 ? ' ×${interval.weight!.toStringAsFixed(1)}кг' : ''}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[700],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ],
+                    // Статистика по повторениям
+                    if (completedRepetitions != null && remainingRepetitions != null &&
+                        (completedRepetitions!.isNotEmpty || remainingRepetitions!.isNotEmpty)) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 4,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          ...completedRepetitions!.entries.map((entry) {
+                            final remaining = remainingRepetitions![entry.key] ?? 0;
+                            return Text(
+                              '${entry.key}: ${entry.value}/${entry.value + remaining}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[800],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ],
+                    // Прогресс
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 6,
+                          backgroundColor: Colors.grey[300],
+                          valueColor: AlwaysStoppedAnimation<Color>(intervalColor),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Кнопка "Следующий" при паузе
+            if (isPaused)
+              SizedBox(
+                width: 48,
+                child: IconButton(
+                  onPressed: canGoNext ? onNextInterval : null,
+                  icon: const Icon(Icons.chevron_right),
+                  iconSize: 40,
+                  color: Colors.blue,
+                ),
+              )
+            else
+              const SizedBox(width: 48),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Виджет графика интервалов
+  Widget _buildIntervalsChart(Color currentColor) {
+    if (allIntervals == null || allIntervals!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Интервалы тренировки',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 40,
+            child: Row(
+              children: List.generate(allIntervals!.length, (index) {
+                final interval = allIntervals![index];
+                final color = _getIntervalColor(interval.type);
+                final isCurrentInterval = index == currentIntervalIndex;
+                final isPast = index < currentIntervalIndex;
+                
+                return Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                    decoration: BoxDecoration(
+                      color: isPast 
+                          ? color.withOpacity(0.3) 
+                          : isCurrentInterval 
+                              ? color 
+                              : color.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(2),
+                      border: isCurrentInterval 
+                          ? Border.all(color: Colors.white, width: 2)
+                          : null,
+                      boxShadow: isCurrentInterval
+                          ? [
+                              BoxShadow(
+                                color: color.withOpacity(0.5),
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                          : null,
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+          const SizedBox(height: 6),
+          // Легенда
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildLegendItem('Работа', const Color(0xFFE53935)),
+              const SizedBox(width: 12),
+              _buildLegendItem('Отдых', const Color(0xFF43A047)),
+              const SizedBox(width: 12),
+              _buildLegendItem('Между сетами', const Color(0xFF1E88E5)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.grey[700],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSquareLayout(BoxConstraints constraints) {
+    final intervalType = currentInterval?.type ?? IntervalType.work;
+    final intervalColor = _getIntervalColor(intervalType);
+    
+    final screenHeight = constraints.maxHeight;
+    final timerFontSize = (screenHeight * 0.2).clamp(80.0, 140.0);
+    final exerciseFontSize = (screenHeight * 0.06).clamp(28.0, 44.0);
+    final repsFontSize = (screenHeight * 0.045).clamp(20.0, 32.0);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            // Кнопка "Предыдущий" при паузе
+            if (isPaused)
+              SizedBox(
+                width: 40,
+                child: IconButton(
+                  onPressed: canGoPrevious ? onPreviousInterval : null,
+                  icon: const Icon(Icons.chevron_left),
+                  iconSize: 36,
+                  color: Colors.blue,
+                ),
+              )
+            else
+              const SizedBox(width: 40),
+            
+            // Основной контент
+            Expanded(
+              child: Column(
+                children: [
+                  // Верхняя часть - таймер и информация
+                  Expanded(
+                    flex: 3,
+                    child: Row(
+                      children: [
+                        // Левая колонка - таймер
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                _formatSeconds(currentTime),
+                                style: TextStyle(
+                                  fontSize: timerFontSize,
+                                  fontWeight: FontWeight.w900,
+                                  color: intervalColor,
+                                  shadows: [
+                                    Shadow(
+                                      color: intervalColor.withOpacity(0.4),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isManualInterval)
+                                Text(
+                                  'РУЧНОЙ',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.orange[700],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        // Правая колонка - название и повторения
+                        Expanded(
+                          flex: 3,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (currentInterval != null &&
+                                    currentInterval!.type == IntervalType.work &&
+                                    currentInterval!.name != null) ...[
+                                  Text(
+                                    currentInterval!.name!,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: exerciseFontSize,
+                                      fontWeight: FontWeight.bold,
+                                      color: intervalColor,
+                                    ),
+                                  ),
+                                  if (currentInterval!.repetitions != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${currentInterval!.repetitions} повторений${currentInterval!.weight != null && currentInterval!.weight! > 0 ? ' × ${currentInterval!.weight!.toStringAsFixed(1)} кг' : ''}',
+                                      style: TextStyle(
+                                        fontSize: repsFontSize,
+                                        color: intervalColor.withOpacity(0.9),
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ] else if (currentInterval != null && currentInterval!.type != IntervalType.work) ...[
+                                  Text(
+                                    currentInterval!.type == IntervalType.rest ? 'ОТДЫХ' : 'ОТДЫХ МЕЖДУ СЕТАМИ',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: exerciseFontSize * 0.9,
+                                      fontWeight: FontWeight.bold,
+                                      color: intervalColor,
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 8),
+                                // Интервал и время
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: intervalColor.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${currentIntervalIndex + 1} / $totalIntervals',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: intervalColor,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    if (totalElapsedTime != null && totalRemainingTime != null) ...[
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '${_formatTime(totalElapsedTime!)} / ${_formatTime(totalElapsedTime! + totalRemainingTime!)}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[700],
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Нижняя часть - график и следующие интервалы
+                  Expanded(
+                    flex: 2,
+                    child: Row(
+                      children: [
+                        // График интервалов
+                        Expanded(
+                          flex: 3,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8, top: 8),
+                            child: _buildIntervalsChart(intervalColor),
+                          ),
+                        ),
+                        // Следующие интервалы и статистика
+                        Expanded(
+                          flex: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8, top: 8),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  // Следующие интервалы
+                                  if (nextIntervals != null && nextIntervals!.isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.9),
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.08),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Далее:',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey[800],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          ...nextIntervals!.take(3).map((interval) {
+                                            final color = _getIntervalColor(interval.type);
+                                            return Padding(
+                                              padding: const EdgeInsets.symmetric(vertical: 2),
+                                              child: Row(
+                                                children: [
+                                                  Container(
+                                                    width: 8,
+                                                    height: 8,
+                                                    decoration: BoxDecoration(
+                                                      color: color,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      '${interval.displayName}${interval.type == IntervalType.work && interval.repetitions != null ? ' ×${interval.repetitions}' : ''}${interval.weight != null && interval.weight! > 0 ? ' ×${interval.weight!.toStringAsFixed(1)}кг' : ''}',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        color: Colors.grey[800],
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  if (interval.duration != null && interval.duration! > 0)
+                                                    Text(
+                                                      '${interval.duration}с',
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        color: Colors.grey[600],
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            );
+                                          }),
+                                        ],
+                                      ),
+                                    ),
+                                  const SizedBox(height: 8),
+                                  // Статистика по упражнениям
+                                  if (completedRepetitions != null && remainingRepetitions != null &&
+                                      (completedRepetitions!.isNotEmpty || remainingRepetitions!.isNotEmpty))
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.9),
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.08),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Статистика:',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey[800],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          ...completedRepetitions!.entries.map((entry) {
+                                            final remaining = remainingRepetitions![entry.key] ?? 0;
+                                            return Text(
+                                              '${entry.key}: ${entry.value}/${entry.value + remaining}',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey[800],
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            );
+                                          }),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Прогресс-бар внизу
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 6,
+                        backgroundColor: Colors.grey[300],
+                        valueColor: AlwaysStoppedAnimation<Color>(intervalColor),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Кнопка "Следующий" при паузе
+            if (isPaused)
+              SizedBox(
+                width: 40,
+                child: IconButton(
+                  onPressed: canGoNext ? onNextInterval : null,
+                  icon: const Icon(Icons.chevron_right),
+                  iconSize: 36,
+                  color: Colors.blue,
+                ),
+              )
+            else
+              const SizedBox(width: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerticalLayout() {
+    final intervalType = currentInterval?.type ?? IntervalType.work;
+    final intervalColor = _getIntervalColor(intervalType);
+
+    return SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Адаптивные размеры шрифтов в зависимости от высоты экрана
+          final screenHeight = constraints.maxHeight;
+          final timerFontSize = (screenHeight * 0.40).clamp(160.0, 300.0);
+          final exerciseFontSize = (screenHeight * 0.07).clamp(36.0, 64.0);
+          final repsFontSize = (screenHeight * 0.05).clamp(28.0, 48.0);
+          
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Основной дисплей времени - ТОЛЬКО СЕКУНДЫ, очень крупно
+                Text(
+                  _formatSeconds(currentTime),
+                  style: TextStyle(
+                    fontSize: timerFontSize,
+                    fontWeight: FontWeight.w900,
+                    color: intervalColor,
+                    shadows: [
+                      Shadow(
+                        color: intervalColor.withOpacity(0.4),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isManualInterval)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      'РУЧНОЙ РЕЖИМ',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.orange[700],
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                // Название упражнения и количество повторений - КРУПНО
+                if (currentInterval != null &&
+                    currentInterval!.type == IntervalType.work &&
+                    currentInterval!.name != null) ...[
+                  Text(
+                    currentInterval!.name!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: exerciseFontSize,
+                      fontWeight: FontWeight.bold,
+                      color: intervalColor,
+                    ),
+                  ),
+                  if (currentInterval!.repetitions != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${currentInterval!.repetitions} повторений${currentInterval!.weight != null && currentInterval!.weight! > 0 ? ' × ${currentInterval!.weight!.toStringAsFixed(1)} кг' : ''}',
+                      style: TextStyle(
+                        fontSize: repsFontSize,
+                        color: intervalColor.withOpacity(0.9),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ] else if (currentInterval!.weight != null && currentInterval!.weight! > 0) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${currentInterval!.weight!.toStringAsFixed(1)} кг',
+                      style: TextStyle(
+                        fontSize: repsFontSize,
+                        color: intervalColor.withOpacity(0.9),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ] else if (currentInterval != null && currentInterval!.type != IntervalType.work) ...[
+                  // Для отдыха показываем тип интервала крупно
+                  Text(
+                    currentInterval!.type == IntervalType.rest ? 'ОТДЫХ' : 'ОТДЫХ МЕЖДУ СЕТАМИ',
+                    style: TextStyle(
+                      fontSize: exerciseFontSize * 0.8,
+                      fontWeight: FontWeight.bold,
+                      color: intervalColor,
+                      letterSpacing: 3,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                // Индикатор интервала
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: intervalColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Интервал ${currentIntervalIndex + 1} / $totalIntervals',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: intervalColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                // Общее время (прошло/осталось)
+                if (totalElapsedTime != null && totalRemainingTime != null) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${_formatTime(totalElapsedTime!)}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        ' / ',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[500],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '${_formatTime(totalElapsedTime! + totalRemainingTime!)}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                // Статистика по повторениям (компактная)
+                if (completedRepetitions != null && remainingRepetitions != null &&
+                    (completedRepetitions!.isNotEmpty || remainingRepetitions!.isNotEmpty)) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Wrap(
+                      spacing: 12,
+                      runSpacing: 6,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ...completedRepetitions!.entries.map((entry) {
+                          final remaining = remainingRepetitions![entry.key] ?? 0;
+                          return Text(
+                            '${entry.key}: ${entry.value}/${entry.value + remaining}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[800],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          );
+                        }),
+                        if (remainingRepetitions!.isNotEmpty)
+                          ...remainingRepetitions!.entries
+                              .where((entry) => !completedRepetitions!.containsKey(entry.key))
+                              .map((entry) {
+                            return Text(
+                              '${entry.key}: 0/${entry.value}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[800],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            );
+                          }),
+                      ],
+                    ),
+                  ),
+                ],
+                // Следующие интервалы (компактная карточка)
+                if (nextIntervals != null && nextIntervals!.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Далее:',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        ...nextIntervals!.take(2).map((interval) {
+                          final color = _getIntervalColor(interval.type);
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2.0),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${interval.displayName}${interval.type == IntervalType.work && interval.repetitions != null ? ' ×${interval.repetitions}' : ''}${interval.weight != null && interval.weight! > 0 ? ' ×${interval.weight!.toStringAsFixed(1)}кг' : ''}',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[800],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (interval.duration != null && interval.duration! > 0)
+                                  Text(
+                                    '${interval.duration}с',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                // Прогресс-бар
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 8,
+                      backgroundColor: Colors.grey[300],
+                      valueColor: AlwaysStoppedAnimation<Color>(intervalColor),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+}
