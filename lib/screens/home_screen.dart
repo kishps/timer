@@ -479,7 +479,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           padding: const EdgeInsets.all(12.0),
           child: Column(
             children: [
-              const WorkoutNavigatorBar(),
+              WorkoutNavigatorBar(
+                key: ValueKey(_timerService.currentIntervalIndex),
+              ),
               if (template == null && _timerService.state == TimerState.idle)
                 Expanded(
                   child: _templates.isEmpty

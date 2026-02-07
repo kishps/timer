@@ -723,27 +723,58 @@ class TimerDisplay extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                // Основной дисплей времени - ТОЛЬКО СЕКУНДЫ, очень крупно
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      _formatSeconds(currentTime),
-                      style: TextStyle(
-                        fontSize: timerFontSize,
-                        fontWeight: FontWeight.w900,
-                        color: intervalColor,
-                        shadows: [
-                          Shadow(
-                            color: intervalColor.withValues(alpha: 0.4),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
+                // Основной дисплей времени - ТОЛЬКО СЕКУНДЫ, очень крупно; при паузе — стрелки переключения интервалов
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (isPaused)
+                      SizedBox(
+                        width: 48,
+                        child: IconButton(
+                          onPressed: canGoPrevious ? onPreviousInterval : null,
+                          icon: const Icon(Icons.chevron_left),
+                          iconSize: 40,
+                          color: Colors.blue,
+                        ),
+                      )
+                    else
+                      const SizedBox(width: 48),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            _formatSeconds(currentTime),
+                            style: TextStyle(
+                              fontSize: timerFontSize,
+                              fontWeight: FontWeight.w900,
+                              color: intervalColor,
+                              shadows: [
+                                Shadow(
+                                  color: intervalColor.withValues(alpha: 0.4),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                    if (isPaused)
+                      SizedBox(
+                        width: 48,
+                        child: IconButton(
+                          onPressed: canGoNext ? onNextInterval : null,
+                          icon: const Icon(Icons.chevron_right),
+                          iconSize: 40,
+                          color: Colors.blue,
+                        ),
+                      )
+                    else
+                      const SizedBox(width: 48),
+                  ],
                 ),
                 if (isManualInterval)
                   Padding(

@@ -733,6 +733,7 @@ class TimerService extends ChangeNotifier {
     } else {
       onTick?.call(_currentTime);
     }
+    notifyListeners();
   }
   
   // Переход к предыдущему интервалу
@@ -764,6 +765,7 @@ class TimerService extends ChangeNotifier {
     } else {
       onTick?.call(_currentTime);
     }
+    notifyListeners();
   }
 
   void dispose() {
