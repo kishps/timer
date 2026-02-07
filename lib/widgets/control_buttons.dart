@@ -21,6 +21,8 @@ class ControlButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final showFinish = onFinish != null && (state == TimerState.running || state == TimerState.paused);
     final showReset = onReset != null && !showFinish;
     
@@ -38,8 +40,8 @@ class ControlButtons extends StatelessWidget {
                     icon: const Icon(Icons.check_circle),
                     label: const Text('Завершить'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
+                      backgroundColor: cs.error,
+                      foregroundColor: cs.onError,
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
@@ -50,7 +52,7 @@ class ControlButtons extends StatelessWidget {
                     onPressed: state != TimerState.idle ? onReset : null,
                     icon: const Icon(Icons.refresh),
                     iconSize: 32,
-                    color: Colors.grey[600],
+                    color: cs.onSurfaceVariant,
                   ),
           ),
         if (showFinish || showReset)
@@ -73,10 +75,8 @@ class ControlButtons extends StatelessWidget {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: state == TimerState.running
-                  ? Colors.orange
-                  : Colors.green,
-              foregroundColor: Colors.white,
+              backgroundColor: state == TimerState.running ? cs.tertiary : cs.primary,
+              foregroundColor: state == TimerState.running ? cs.onTertiary : cs.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
@@ -96,10 +96,7 @@ class ControlButtons extends StatelessWidget {
                 Flexible(
                   child: Text(
                     _getButtonText(),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),

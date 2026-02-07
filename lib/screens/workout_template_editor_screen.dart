@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/workout_template.dart';
 import '../models/workout_interval.dart';
 import '../services/storage_service.dart';
+import '../widgets/workout_navigator_bar.dart';
 
 class WorkoutTemplateEditorScreen extends StatefulWidget {
   final WorkoutTemplate? template;
@@ -445,16 +446,15 @@ class _WorkoutTemplateEditorScreenState
         actions: [
           TextButton(
             onPressed: _saveTemplate,
-            child: const Text(
-              'Сохранить',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Сохранить'),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
+          const WorkoutNavigatorBar(margin: EdgeInsets.zero),
+          const SizedBox(height: 12),
           // Название тренировки
           TextField(
             controller: _nameController,
@@ -681,10 +681,10 @@ class _WorkoutTemplateEditorScreenState
                             children: [
                               CircleAvatar(
                                 backgroundColor: interval.type == IntervalType.work
-                                    ? Colors.red.withOpacity(0.2)
+                                    ? Colors.red.withValues(alpha: 0.2)
                                     : interval.type == IntervalType.restBetweenSets
-                                        ? Colors.blue.withOpacity(0.2)
-                                        : Colors.green.withOpacity(0.2),
+                                        ? Colors.blue.withValues(alpha: 0.2)
+                                        : Colors.green.withValues(alpha: 0.2),
                                 child: Text('${index + 1}'),
                               ),
                               const SizedBox(width: 12),
@@ -814,7 +814,7 @@ class _WorkoutTemplateEditorScreenState
           // Предпросмотр
           if (_intervals.isNotEmpty)
             Card(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue.withValues(alpha: 0.1),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -869,6 +869,7 @@ class _WorkoutTemplateEditorScreenState
     
     // Загружаем историю упражнений
     final exerciseNames = await _storageService.getExerciseNames();
+    if (!mounted) return;
     String? selectedExerciseName;
 
     showDialog(
@@ -882,7 +883,7 @@ class _WorkoutTemplateEditorScreenState
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<IntervalType>(
-                  value: type,
+                  initialValue: type,
                   decoration: const InputDecoration(
                     labelText: 'Тип интервала',
                     border: OutlineInputBorder(),
@@ -920,7 +921,7 @@ class _WorkoutTemplateEditorScreenState
                   // Выбор из существующих упражнений
                   if (exerciseNames.isNotEmpty) ...[
                     DropdownButtonFormField<String?>(
-                      value: selectedExerciseName,
+                      initialValue: selectedExerciseName,
                       decoration: const InputDecoration(
                         labelText: 'Выбрать из существующих',
                         border: OutlineInputBorder(),
@@ -1015,7 +1016,7 @@ class _WorkoutTemplateEditorScreenState
                   name: name,
                   repetitions: repetitions,
                   weight: weight,
-                  order: index != null ? index : _intervals.length,
+                  order: index ?? _intervals.length,
                 );
 
                 if (isEdit && index != null) {

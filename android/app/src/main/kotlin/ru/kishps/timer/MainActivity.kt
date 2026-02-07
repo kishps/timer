@@ -1,4 +1,4 @@
-package com.example.timer
+package ru.kishps.timer
 
 import io.flutter.embedding.android.FlutterActivity
 

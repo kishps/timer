@@ -45,4 +45,26 @@ class IntervalStat {
       weight: json['weight'] != null ? (json['weight'] as num).toDouble() : null,
     );
   }
+
+  IntervalStat copyWith({
+    int? intervalIndex,
+    IntervalType? type,
+    Object? name = _undefined,
+    int? plannedDuration,
+    int? actualDuration,
+    Object? repetitions = _undefined,
+    Object? weight = _undefined,
+  }) {
+    return IntervalStat(
+      intervalIndex: intervalIndex ?? this.intervalIndex,
+      type: type ?? this.type,
+      name: name == _undefined ? this.name : name as String?,
+      plannedDuration: plannedDuration ?? this.plannedDuration,
+      actualDuration: actualDuration ?? this.actualDuration,
+      repetitions: repetitions == _undefined ? this.repetitions : repetitions as int?,
+      weight: weight == _undefined ? this.weight : weight as double?,
+    );
+  }
+
+  static const Object _undefined = Object();
 }

@@ -21,7 +21,7 @@ class AudioHelper {
       // Используем gainTransientMayDuck — звуки воспроизводятся,
       // музыка временно приглушается и не ставится на паузу
       await _player.setAudioContext(
-        AudioContext(
+        const AudioContext(
           android: AudioContextAndroid(
             isSpeakerphoneOn: false,
             stayAwake: false,

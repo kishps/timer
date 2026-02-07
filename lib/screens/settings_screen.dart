@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:io';
 import 'dart:convert';
 import '../models/timer_config.dart';
 import '../services/storage_service.dart';
 import '../utils/audio_helper.dart';
+import '../widgets/workout_navigator_bar.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -57,16 +57,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: _saveConfig,
-            child: const Text(
-              'Сохранить',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Сохранить'),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
+          const WorkoutNavigatorBar(margin: EdgeInsets.zero),
+          const SizedBox(height: 12),
           // Звуковые сигналы
           Card(
             child: SwitchListTile(

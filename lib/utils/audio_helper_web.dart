@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use, avoid_web_libraries_in_flutter, non_constant_identifier_names
 // Условный импорт для веб-платформы
 import 'dart:js' as js;
 

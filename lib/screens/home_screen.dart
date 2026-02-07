@@ -9,6 +9,8 @@ import '../services/storage_service.dart';
 import '../utils/audio_helper.dart';
 import '../widgets/timer_display.dart';
 import '../widgets/control_buttons.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/workout_navigator_bar.dart';
 import 'settings_screen.dart';
 import 'history_screen.dart';
 import 'workout_templates_screen.dart';
@@ -18,25 +20,26 @@ import 'pre_workout_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final WorkoutTemplate? selectedTemplate;
+  final TimerService timerService;
 
-  const HomeScreen({super.key, this.selectedTemplate});
+  const HomeScreen({super.key, this.selectedTemplate, required this.timerService});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  final TimerService _timerService = TimerService();
+  late final TimerService _timerService;
   final StorageService _storageService = StorageService();
   TimerConfig? _config;
   WorkoutTemplate? _currentTemplate;
   List<WorkoutTemplate> _templates = [];
   bool _isLoading = true;
-  bool _soundEnabled = true; // Используется для инициализации таймера
 
   @override
   void initState() {
     super.initState();
+    _timerService = widget.timerService;
     WidgetsBinding.instance.addObserver(this);
     if (widget.selectedTemplate != null) {
       _currentTemplate = widget.selectedTemplate;
@@ -78,8 +81,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _loadConfigForTemplate() async {
     final config = await _storageService.loadConfig();
+    await _timerService.warmupManualIntervalEstimates(_storageService);
     setState(() {
-      _soundEnabled = config.soundEnabled;
       _timerService.initializeWithTemplate(
         _currentTemplate!,
         soundEnabled: config.soundEnabled,
@@ -92,9 +95,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _loadConfig() async {
     final config = await _storageService.loadConfig();
+    await _timerService.warmupManualIntervalEstimates(_storageService);
     setState(() {
       _config = config;
-      _soundEnabled = config.soundEnabled;
       _timerService.initialize(config);
       _isLoading = false;
     });
@@ -187,6 +190,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
 
     await _storageService.saveSession(session);
+    // Обновим кеш оценок ручных интервалов для будущих тренировок.
+    _timerService.invalidateManualIntervalEstimates();
   }
 
   void _showFinishConfirmationDialog() {
@@ -200,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     
     bool saveToHistory = true;
 
-    String _formatTime(int seconds) {
+    String formatTime(int seconds) {
       final minutes = seconds ~/ 60;
       final secs = seconds % 60;
       return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
@@ -224,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text('Время: ${_formatTime(elapsedTime)}'),
+                Text('Время: ${formatTime(elapsedTime)}'),
                 if (template != null) ...[
                   Text('Интервалов работы: $completedWorkIntervals / $totalWorkIntervals'),
                   Text('Всего интервалов: ${_timerService.totalIntervals}'),
@@ -350,9 +355,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _startWorkout(WorkoutTemplate template) async {
     await _storageService.updateTemplateLastUsed(template.id);
     final config = await _storageService.loadConfig();
+    await _timerService.warmupManualIntervalEstimates(_storageService);
     setState(() {
       _currentTemplate = template;
-      _soundEnabled = config.soundEnabled;
       _timerService.initializeWithTemplate(
         template,
         soundEnabled: config.soundEnabled,
@@ -474,62 +479,40 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           padding: const EdgeInsets.all(12.0),
           child: Column(
             children: [
+              const WorkoutNavigatorBar(),
               if (template == null && _timerService.state == TimerState.idle)
                 Expanded(
                   child: _templates.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.fitness_center,
-                                size: 64,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Нет сохраненных тренировок',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey[600],
+                      ? EmptyState(
+                          icon: Icons.fitness_center,
+                          title: 'Нет сохранённых тренировок',
+                          description: 'Создайте первую тренировку и запускайте её одним нажатием.',
+                          action: ElevatedButton.icon(
+                            onPressed: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const WorkoutTemplateEditorScreen(),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Создайте свою первую тренировку',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[500],
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              ElevatedButton.icon(
-                                onPressed: () async {
-                                  final result = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const WorkoutTemplateEditorScreen(),
-                                    ),
-                                  );
-                                  if (result == true) {
-                                    await _loadTemplates();
-                                  }
-                                },
-                                icon: const Icon(Icons.add),
-                                label: const Text('Создать тренировку'),
-                              ),
-                            ],
+                              );
+                              if (result == true) {
+                                await _loadTemplates();
+                              }
+                            },
+                            icon: const Icon(Icons.add),
+                            label: const Text('Создать тренировку'),
                           ),
                         )
                       : ListView.builder(
                           itemCount: _templates.length,
                           itemBuilder: (context, index) {
                             final workoutTemplate = _templates[index];
+                            final cs = Theme.of(context).colorScheme;
                             return Card(
                               margin: const EdgeInsets.only(bottom: 8.0),
                               child: ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: Colors.blue.withOpacity(0.2),
+                                  backgroundColor: cs.primary.withValues(alpha: 0.15),
                                   child: const Icon(Icons.fitness_center),
                                 ),
                                 title: Text(
@@ -554,12 +537,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                         'Последний запуск: ${_formatDate(workoutTemplate.lastUsed!)}',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600],
+                                          color: cs.onSurfaceVariant,
                                         ),
                                       ),
                                   ],
                                 ),
-                                trailing: const Icon(Icons.play_arrow, color: Colors.green),
+                                trailing: Icon(Icons.play_arrow, color: cs.primary),
                                 isThreeLine: true,
                                 onTap: () => _startWorkout(workoutTemplate),
                               ),
@@ -598,8 +581,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       _timerService.nextInterval();
                       setState(() {});
                     },
-                    // Все интервалы для графика на квадратном экране
-                    allIntervals: _timerService.template?.intervals,
                   ),
                 ),
               // Кнопка "Следующий" для ручных интервалов
@@ -621,13 +602,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
@@ -657,7 +631,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         final config = await _storageService.loadConfig();
                         setState(() {
                           _currentTemplate = updatedTemplate;
-                          _soundEnabled = config.soundEnabled;
                           _timerService.initializeWithTemplate(
                             updatedTemplate,
                             soundEnabled: config.soundEnabled,
@@ -696,7 +669,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _timerService.dispose();
     super.dispose();
   }
 }

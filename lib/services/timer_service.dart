@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import '../models/timer_config.dart';
 import '../models/workout_template.dart';
 import '../models/workout_interval.dart';
 import '../models/interval_stat.dart';
 import '../utils/audio_helper.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../services/storage_service.dart';
 
 enum TimerState {
   idle,
@@ -13,7 +15,7 @@ enum TimerState {
   finished,
 }
 
-class TimerService {
+class TimerService extends ChangeNotifier {
   Timer? _timer;
   TimerState _state = TimerState.idle;
   int _currentTime = 0;
@@ -29,11 +31,17 @@ class TimerService {
   DateTime? _currentIntervalStartTime; // Время начала текущего интервала
 
   // Статистика
-  Map<String, int> _exercisesCompleted = {};
-  Map<String, double> _exercisesWithWeight = {};
+  final Map<String, int> _exercisesCompleted = {};
+  final Map<String, double> _exercisesWithWeight = {};
   int _totalRepetitions = 0;
   double _totalWeight = 0.0;
-  List<IntervalStat> _intervalStats = []; // Статистика по каждому интервалу
+  final List<IntervalStat> _intervalStats = []; // Статистика по каждому интервалу
+
+  // Оценки длительности ручных интервалов (секунды)
+  final Map<String, double> _avgManualWorkByNameSec = {};
+  final Map<String, Map<IntervalType, double>> _avgManualByTemplateSec = {};
+  final Map<IntervalType, double> _avgManualByTypeSec = {};
+  bool _estimatesLoaded = false;
 
   // Callbacks
   Function(int currentTime)? onTick;
@@ -47,6 +55,7 @@ class TimerService {
   int get totalIntervals => _intervals.length;
   WorkoutTemplate? get template => _template;
   TimerConfig? get config => _config;
+  List<WorkoutInterval> get intervals => List.unmodifiable(_intervals);
   Map<String, int> get exercisesCompleted => Map.unmodifiable(_exercisesCompleted);
   Map<String, double> get exercisesWithWeight => Map.unmodifiable(_exercisesWithWeight);
   int get totalRepetitions => _totalRepetitions;
@@ -67,6 +76,7 @@ class TimerService {
     _countdownSeconds = countdownSeconds;
     _intervals = List.from(template.intervals)..sort((a, b) => a.order.compareTo(b.order));
     reset();
+    notifyListeners();
   }
 
   // Инициализация с конфигом (для обратной совместимости)
@@ -94,6 +104,80 @@ class TimerService {
       }
     }
     reset();
+    notifyListeners();
+  }
+
+  Future<void> warmupManualIntervalEstimates(StorageService storage) async {
+    if (_estimatesLoaded) return;
+    final sessions = await storage.loadHistory();
+    if (sessions.isEmpty) {
+      _estimatesLoaded = true;
+      return;
+    }
+
+    final Map<String, List<int>> workByName = {};
+    final Map<String, Map<IntervalType, List<int>>> byTemplate = {};
+    final Map<IntervalType, List<int>> byType = {};
+
+    for (final session in sessions) {
+      final stats = session.intervalStats;
+      if (stats == null || stats.isEmpty) continue;
+
+      final templateId = session.workoutTemplateId;
+
+      for (final stat in stats) {
+        // Ручной интервал = plannedDuration == 0 (так сохраняется для ручных).
+        if (stat.plannedDuration != 0) continue;
+        if (stat.actualDuration <= 0) continue;
+
+        byType.putIfAbsent(stat.type, () => <int>[]).add(stat.actualDuration);
+
+        if (templateId != null && templateId.isNotEmpty) {
+          final templateMap = byTemplate.putIfAbsent(templateId, () => <IntervalType, List<int>>{});
+          templateMap.putIfAbsent(stat.type, () => <int>[]).add(stat.actualDuration);
+        }
+
+        if (stat.type == IntervalType.work) {
+          final name = (stat.name ?? '').trim();
+          if (name.isNotEmpty) {
+            workByName.putIfAbsent(name, () => <int>[]).add(stat.actualDuration);
+          }
+        }
+      }
+    }
+
+    double avg(List<int> xs) => xs.isEmpty ? 0 : xs.reduce((a, b) => a + b) / xs.length;
+
+    _avgManualWorkByNameSec
+      ..clear()
+      ..addEntries(
+        workByName.entries.map(
+          (e) => MapEntry(e.key, avg(e.value)),
+        ),
+      );
+
+    _avgManualByTemplateSec
+      ..clear()
+      ..addEntries(
+        byTemplate.entries.map((e) {
+          final mapped = <IntervalType, double>{};
+          for (final entry in e.value.entries) {
+            mapped[entry.key] = avg(entry.value);
+          }
+          return MapEntry(e.key, mapped);
+        }),
+      );
+
+    _avgManualByTypeSec
+      ..clear()
+      ..addEntries(byType.entries.map((e) => MapEntry(e.key, avg(e.value))));
+
+    _estimatesLoaded = true;
+    notifyListeners();
+  }
+
+  void invalidateManualIntervalEstimates() {
+    _estimatesLoaded = false;
   }
 
   void start() {
@@ -128,24 +212,19 @@ class TimerService {
       // Включаем wake lock при возобновлении
       WakelockPlus.enable();
       // При возобновлении обновляем время начала, если интервал был изменен
-      if (_currentIntervalStartTime == null) {
-        _currentIntervalStartTime = DateTime.now();
-      }
+      _currentIntervalStartTime ??= DateTime.now();
       // Для ручных интервалов также обновляем время начала
       if (_currentInterval != null && (_currentInterval!.duration == null || _currentInterval!.duration == 0)) {
-        if (_manualIntervalStartTime == null) {
-          _manualIntervalStartTime = DateTime.now();
-        }
+        _manualIntervalStartTime ??= DateTime.now();
       }
     }
 
     _state = TimerState.running;
+    notifyListeners();
     
     // Если текущий интервал без времени, убеждаемся что время начала установлено
     if (_currentInterval != null && (_currentInterval!.duration == null || _currentInterval!.duration == 0)) {
-      if (_manualIntervalStartTime == null) {
-        _manualIntervalStartTime = DateTime.now();
-      }
+      _manualIntervalStartTime ??= DateTime.now();
     } else {
       _manualIntervalStartTime = null;
     }
@@ -157,6 +236,7 @@ class TimerService {
     if (_state != TimerState.running) return;
     _timer?.cancel();
     _state = TimerState.paused;
+    notifyListeners();
     
     // Выключаем wake lock при паузе
     WakelockPlus.disable();
@@ -173,6 +253,7 @@ class TimerService {
   void resume() {
     if (_state != TimerState.paused) return;
     _state = TimerState.running;
+    notifyListeners();
     
     // Если текущий интервал без времени, корректируем время начала с учетом паузы
     if (_currentInterval != null && (_currentInterval!.duration == null || _currentInterval!.duration == 0)) {
@@ -188,9 +269,7 @@ class TimerService {
     }
     
     // Восстанавливаем время начала интервала
-    if (_currentIntervalStartTime == null) {
-      _currentIntervalStartTime = DateTime.now();
-    }
+    _currentIntervalStartTime ??= DateTime.now();
     
     _startTimer();
   }
@@ -211,6 +290,7 @@ class TimerService {
     // Выключаем wake lock при сбросе
     WakelockPlus.disable();
     onTick?.call(0);
+    notifyListeners();
   }
 
   void _startTimer() {
@@ -219,9 +299,7 @@ class TimerService {
     // Если интервал без времени (duration = null или 0), запускаем таймер для отслеживания прошедшего времени
     if (_currentInterval != null && (_currentInterval!.duration == null || _currentInterval!.duration == 0)) {
       // Убеждаемся, что время начала установлено
-      if (_manualIntervalStartTime == null) {
-        _manualIntervalStartTime = DateTime.now();
-      }
+      _manualIntervalStartTime ??= DateTime.now();
       
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         // Обновляем прошедшее время для ручного интервала
@@ -230,6 +308,7 @@ class TimerService {
           // Обновляем currentTime для совместимости
           _currentTime = elapsed;
           onTick?.call(elapsed);
+          notifyListeners();
         }
       });
       // Сразу вызываем onTick для начального отображения
@@ -237,6 +316,7 @@ class TimerService {
         final elapsed = DateTime.now().difference(_manualIntervalStartTime!).inSeconds;
         _currentTime = elapsed;
         onTick?.call(elapsed);
+        notifyListeners();
       }
       return;
     }
@@ -252,6 +332,7 @@ class TimerService {
         }
         
         onTick?.call(_currentTime);
+        notifyListeners();
       } else {
         _handleIntervalComplete();
       }
@@ -393,6 +474,7 @@ class TimerService {
     _currentIntervalStartTime = null;
     onTick?.call(0);
     onFinished?.call();
+    notifyListeners();
   }
 
   void _playSoundIfEnabled() {
@@ -462,6 +544,80 @@ class TimerService {
       }
     }
     return remaining;
+  }
+
+  int getEstimatedRemainingTime() {
+    int remaining = 0;
+
+    if (_intervals.isEmpty || _currentIntervalIndex >= _intervals.length) {
+      return 0;
+    }
+
+    // Текущий интервал
+    if (_currentInterval != null) {
+      final d = _currentInterval!.duration ?? 0;
+      if (d > 0) {
+        remaining += _currentTime;
+      } else {
+        final estimate = _estimateManualIntervalDuration(_currentInterval!);
+        final elapsed = getManualIntervalElapsedTime();
+        final left = (estimate - elapsed).clamp(0, estimate);
+        remaining += left;
+      }
+    }
+
+    // Остальные интервалы
+    for (int i = _currentIntervalIndex + 1; i < _intervals.length; i++) {
+      final interval = _intervals[i];
+      final d = interval.duration ?? 0;
+      if (d > 0) {
+        remaining += d;
+      } else {
+        remaining += _estimateManualIntervalDuration(interval);
+      }
+    }
+
+    return remaining;
+  }
+
+  int estimateIntervalDurationSeconds(WorkoutInterval interval) {
+    final d = interval.duration ?? 0;
+    if (d > 0) return d;
+    return _estimateManualIntervalDuration(interval);
+  }
+
+  int _estimateManualIntervalDuration(WorkoutInterval interval) {
+    final templateId = _template?.id;
+    final type = interval.type;
+
+    if (type == IntervalType.work) {
+      final name = (interval.name ?? '').trim();
+      if (name.isNotEmpty) {
+        final v = _avgManualWorkByNameSec[name];
+        if (v != null && v > 0) return v.round();
+      }
+      final v = _avgManualByTypeSec[IntervalType.work];
+      if (v != null && v > 0) return v.round();
+      return 45; // последний fallback
+    }
+
+    if (templateId != null && templateId.isNotEmpty) {
+      final m = _avgManualByTemplateSec[templateId];
+      final v = m?[type];
+      if (v != null && v > 0) return v.round();
+    }
+
+    final v = _avgManualByTypeSec[type];
+    if (v != null && v > 0) return v.round();
+
+    switch (type) {
+      case IntervalType.rest:
+        return 15;
+      case IntervalType.restBetweenSets:
+        return 60;
+      case IntervalType.work:
+        return 45;
+    }
   }
 
   // Получение количества завершенных интервалов работы
@@ -614,5 +770,6 @@ class TimerService {
     _timer?.cancel();
     // Выключаем wake lock при уничтожении сервиса
     WakelockPlus.disable();
+    super.dispose();
   }
 }

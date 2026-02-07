@@ -104,4 +104,38 @@ class WorkoutSession {
       intervalStats: intervalStats,
     );
   }
+
+  WorkoutSession copyWith({
+    String? id,
+    DateTime? dateTime,
+    int? totalDuration,
+    int? rounds,
+    int? workDuration,
+    int? restDuration,
+    Object? workoutTemplateId = _undefined,
+    Object? workoutName = _undefined,
+    Object? exercisesCompleted = _undefined,
+    Object? totalRepetitions = _undefined,
+    Object? totalWeight = _undefined,
+    Object? exercisesWithWeight = _undefined,
+    Object? intervalStats = _undefined,
+  }) {
+    return WorkoutSession(
+      id: id ?? this.id,
+      dateTime: dateTime ?? this.dateTime,
+      totalDuration: totalDuration ?? this.totalDuration,
+      rounds: rounds ?? this.rounds,
+      workDuration: workDuration ?? this.workDuration,
+      restDuration: restDuration ?? this.restDuration,
+      workoutTemplateId: workoutTemplateId == _undefined ? this.workoutTemplateId : workoutTemplateId as String?,
+      workoutName: workoutName == _undefined ? this.workoutName : workoutName as String?,
+      exercisesCompleted: exercisesCompleted == _undefined ? this.exercisesCompleted : exercisesCompleted as Map<String, int>?,
+      totalRepetitions: totalRepetitions == _undefined ? this.totalRepetitions : totalRepetitions as int?,
+      totalWeight: totalWeight == _undefined ? this.totalWeight : totalWeight as double?,
+      exercisesWithWeight: exercisesWithWeight == _undefined ? this.exercisesWithWeight : exercisesWithWeight as Map<String, double>?,
+      intervalStats: intervalStats == _undefined ? this.intervalStats : intervalStats as List<IntervalStat>?,
+    );
+  }
+
+  static const Object _undefined = Object();
 }

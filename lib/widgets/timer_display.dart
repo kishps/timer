@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/workout_interval.dart';
+import '../theme/interval_colors.dart';
 
 class TimerDisplay extends StatelessWidget {
   final int currentTime;
@@ -25,7 +26,7 @@ class TimerDisplay extends StatelessWidget {
   final VoidCallback? onNextInterval;
   
   // Все интервалы для графика (квадратный экран)
-  final List<WorkoutInterval>? allIntervals;
+  // (график интервалов удалён; прогресс отображается в верхнем навигатор-баре)
 
   const TimerDisplay({
     super.key,
@@ -48,7 +49,6 @@ class TimerDisplay extends StatelessWidget {
     this.canGoNext = false,
     this.onPreviousInterval,
     this.onNextInterval,
-    this.allIntervals,
   });
 
   String _formatTime(int seconds) {
@@ -62,14 +62,15 @@ class TimerDisplay extends StatelessWidget {
     return seconds.toString();
   }
 
-  Color _getIntervalColor(IntervalType type) {
+  Color _getIntervalColor(BuildContext context, IntervalType type) {
+    final colors = IntervalColors.of(context);
     switch (type) {
       case IntervalType.work:
-        return const Color(0xFFE53935); // Более насыщенный красный
+        return colors.work;
       case IntervalType.rest:
-        return const Color(0xFF43A047); // Более насыщенный зеленый
+        return colors.rest;
       case IntervalType.restBetweenSets:
-        return const Color(0xFF1E88E5); // Более насыщенный синий
+        return colors.restBetweenSets;
     }
   }
 
@@ -88,19 +89,19 @@ class TimerDisplay extends StatelessWidget {
         final isLandscape = aspectRatio > 1.3;
         
         if (isSquare) {
-          return _buildSquareLayout(constraints);
+          return _buildSquareLayout(context, constraints);
         } else if (isLandscape) {
-          return _buildLandscapeLayout(constraints);
+          return _buildLandscapeLayout(context, constraints);
         } else {
-          return _buildVerticalLayout();
+          return _buildVerticalLayout(context);
         }
       },
     );
   }
 
-  Widget _buildLandscapeLayout(BoxConstraints constraints) {
+  Widget _buildLandscapeLayout(BuildContext context, BoxConstraints constraints) {
     final intervalType = currentInterval?.type ?? IntervalType.work;
-    final intervalColor = _getIntervalColor(intervalType);
+    final intervalColor = _getIntervalColor(context, intervalType);
     
     final screenHeight = constraints.maxHeight;
     final timerFontSize = (screenHeight * 0.7).clamp(80.0, 300.0);
@@ -143,7 +144,7 @@ class TimerDisplay extends StatelessWidget {
                         color: intervalColor,
                         shadows: [
                           Shadow(
-                            color: intervalColor.withOpacity(0.4),
+                            color: intervalColor.withValues(alpha: 0.4),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -156,7 +157,7 @@ class TimerDisplay extends StatelessWidget {
                       'РУЧНОЙ',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.orange[700],
+                        color: IntervalColors.of(context).manual,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -197,7 +198,7 @@ class TimerDisplay extends StatelessWidget {
                                 text: '${currentInterval!.repetitions}',
                                 style: TextStyle(
                                   fontSize: repsNumberFontSize,
-                                  color: intervalColor.withOpacity(0.9),
+                                  color: intervalColor.withValues(alpha: 0.9),
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
@@ -205,7 +206,7 @@ class TimerDisplay extends StatelessWidget {
                                 text: ' пвт.',
                                 style: TextStyle(
                                   fontSize: repsTextFontSize,
-                                  color: intervalColor.withOpacity(0.9),
+                                  color: intervalColor.withValues(alpha: 0.9),
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -214,7 +215,7 @@ class TimerDisplay extends StatelessWidget {
                                   text: ' × ${currentInterval!.weight!.toStringAsFixed(1)} кг',
                                   style: TextStyle(
                                     fontSize: repsNumberFontSize,
-                                    color: intervalColor.withOpacity(0.9),
+                                    color: intervalColor.withValues(alpha: 0.9),
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -227,7 +228,7 @@ class TimerDisplay extends StatelessWidget {
                           '${currentInterval!.weight!.toStringAsFixed(1)} кг',
                           style: TextStyle(
                             fontSize: repsNumberFontSize,
-                            color: intervalColor.withOpacity(0.9),
+                            color: intervalColor.withValues(alpha: 0.9),
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -251,7 +252,7 @@ class TimerDisplay extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: intervalColor.withOpacity(0.15),
+                            color: intervalColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Text(
@@ -269,7 +270,7 @@ class TimerDisplay extends StatelessWidget {
                             '${_formatTime(totalElapsedTime!)} / ${_formatTime(totalElapsedTime! + totalRemainingTime!)}',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[700],
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -287,11 +288,11 @@ class TimerDisplay extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey[700],
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                           ...nextIntervals!.take(2).map((interval) {
-                            final color = _getIntervalColor(interval.type);
+                            final color = _getIntervalColor(context, interval.type);
                             return Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: Row(
@@ -310,7 +311,7 @@ class TimerDisplay extends StatelessWidget {
                                     '${interval.displayName}${interval.type == IntervalType.work && interval.repetitions != null ? ' ×${interval.repetitions}' : ''}${interval.weight != null && interval.weight! > 0 ? ' ×${interval.weight!.toStringAsFixed(1)}кг' : ''}',
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: Colors.grey[700],
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -336,7 +337,7 @@ class TimerDisplay extends StatelessWidget {
                               '${entry.key}: ${entry.value}/${entry.value + remaining}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[800],
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.w600,
                               ),
                             );
@@ -345,19 +346,7 @@ class TimerDisplay extends StatelessWidget {
                       ),
                     ],
                     // Прогресс
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 6,
-                          backgroundColor: Colors.grey[300],
-                          valueColor: AlwaysStoppedAnimation<Color>(intervalColor),
-                        ),
-                      ),
-                    ),
+                    // Прогресс перенесён в верхний навигатор-бар
                   ],
                 ),
               ),
@@ -381,118 +370,9 @@ class TimerDisplay extends StatelessWidget {
     );
   }
 
-  // Виджет графика интервалов
-  Widget _buildIntervalsChart(Color currentColor) {
-    if (allIntervals == null || allIntervals!.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Интервалы тренировки',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 40,
-            child: Row(
-              children: List.generate(allIntervals!.length, (index) {
-                final interval = allIntervals![index];
-                final color = _getIntervalColor(interval.type);
-                final isCurrentInterval = index == currentIntervalIndex;
-                final isPast = index < currentIntervalIndex;
-                
-                return Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 0.5),
-                    decoration: BoxDecoration(
-                      color: isPast 
-                          ? color.withOpacity(0.3) 
-                          : isCurrentInterval 
-                              ? color 
-                              : color.withOpacity(0.6),
-                      borderRadius: BorderRadius.circular(2),
-                      border: isCurrentInterval 
-                          ? Border.all(color: Colors.white, width: 2)
-                          : null,
-                      boxShadow: isCurrentInterval
-                          ? [
-                              BoxShadow(
-                                color: color.withOpacity(0.5),
-                                blurRadius: 4,
-                                spreadRadius: 1,
-                              ),
-                            ]
-                          : null,
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-          const SizedBox(height: 6),
-          // Легенда
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLegendItem('Работа', const Color(0xFFE53935)),
-              const SizedBox(width: 12),
-              _buildLegendItem('Отдых', const Color(0xFF43A047)),
-              const SizedBox(width: 12),
-              _buildLegendItem('Между сетами', const Color(0xFF1E88E5)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildLegendItem(String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey[700],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSquareLayout(BoxConstraints constraints) {
+  Widget _buildSquareLayout(BuildContext context, BoxConstraints constraints) {
     final intervalType = currentInterval?.type ?? IntervalType.work;
-    final intervalColor = _getIntervalColor(intervalType);
+    final intervalColor = _getIntervalColor(context, intervalType);
     
     final screenHeight = constraints.maxHeight;
     final timerFontSize = (screenHeight * 0.35).clamp(80.0, 220.0);
@@ -545,7 +425,7 @@ class TimerDisplay extends StatelessWidget {
                                     color: intervalColor,
                                     shadows: [
                                       Shadow(
-                                        color: intervalColor.withOpacity(0.4),
+                                        color: intervalColor.withValues(alpha: 0.4),
                                         blurRadius: 12,
                                         offset: const Offset(0, 4),
                                       ),
@@ -597,7 +477,7 @@ class TimerDisplay extends StatelessWidget {
                                             text: '${currentInterval!.repetitions}',
                                             style: TextStyle(
                                               fontSize: repsNumberFontSize,
-                                              color: intervalColor.withOpacity(0.9),
+                                              color: intervalColor.withValues(alpha: 0.9),
                                               fontWeight: FontWeight.w900,
                                             ),
                                           ),
@@ -605,7 +485,7 @@ class TimerDisplay extends StatelessWidget {
                                             text: ' пвт.',
                                             style: TextStyle(
                                               fontSize: repsTextFontSize,
-                                              color: intervalColor.withOpacity(0.9),
+                                              color: intervalColor.withValues(alpha: 0.9),
                                               fontWeight: FontWeight.w700,
                                             ),
                                           ),
@@ -614,7 +494,7 @@ class TimerDisplay extends StatelessWidget {
                                               text: ' × ${currentInterval!.weight!.toStringAsFixed(1)} кг',
                                               style: TextStyle(
                                                 fontSize: repsNumberFontSize,
-                                                color: intervalColor.withOpacity(0.9),
+                                                color: intervalColor.withValues(alpha: 0.9),
                                                 fontWeight: FontWeight.w900,
                                               ),
                                             ),
@@ -641,7 +521,7 @@ class TimerDisplay extends StatelessWidget {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: intervalColor.withOpacity(0.15),
+                                        color: intervalColor.withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
@@ -659,7 +539,7 @@ class TimerDisplay extends StatelessWidget {
                                         '${_formatTime(totalElapsedTime!)} / ${_formatTime(totalElapsedTime! + totalRemainingTime!)}',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[700],
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -674,24 +554,16 @@ class TimerDisplay extends StatelessWidget {
                     ),
                   ),
                   
-                  // Нижняя часть - график и следующие интервалы
+                  // Нижняя часть - следующие интервалы и статистика
                   Expanded(
                     flex: 2,
                     child: Row(
                       children: [
-                        // График интервалов
-                        Expanded(
-                          flex: 3,
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 4, top: 4),
-                            child: _buildIntervalsChart(intervalColor),
-                          ),
-                        ),
                         // Следующие интервалы и статистика
                         Expanded(
-                          flex: 2,
+                          flex: 1,
                           child: Padding(
-                            padding: const EdgeInsets.only(left: 4, top: 4),
+                            padding: const EdgeInsets.only(top: 4),
                             child: SingleChildScrollView(
                               child: Column(
                                 children: [
@@ -700,15 +572,11 @@ class TimerDisplay extends StatelessWidget {
                                     Container(
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: Theme.of(context).colorScheme.surfaceContainer,
                                         borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.08),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
+                                        border: Border.all(
+                                          color: Theme.of(context).colorScheme.outlineVariant,
+                                        ),
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -718,12 +586,12 @@ class TimerDisplay extends StatelessWidget {
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.grey[800],
+                                              color: Theme.of(context).colorScheme.onSurface,
                                             ),
                                           ),
                                           const SizedBox(height: 6),
                                           ...nextIntervals!.take(3).map((interval) {
-                                            final color = _getIntervalColor(interval.type);
+                                            final color = _getIntervalColor(context, interval.type);
                                             return Padding(
                                               padding: const EdgeInsets.symmetric(vertical: 2),
                                               child: Row(
@@ -742,7 +610,7 @@ class TimerDisplay extends StatelessWidget {
                                                       '${interval.displayName}${interval.type == IntervalType.work && interval.repetitions != null ? ' ×${interval.repetitions}' : ''}${interval.weight != null && interval.weight! > 0 ? ' ×${interval.weight!.toStringAsFixed(1)}кг' : ''}',
                                                       style: TextStyle(
                                                         fontSize: 11,
-                                                        color: Colors.grey[800],
+                                                        color: Theme.of(context).colorScheme.onSurface,
                                                         fontWeight: FontWeight.w600,
                                                       ),
                                                       maxLines: 1,
@@ -754,7 +622,7 @@ class TimerDisplay extends StatelessWidget {
                                                       '${interval.duration}с',
                                                       style: TextStyle(
                                                         fontSize: 10,
-                                                        color: Colors.grey[600],
+                                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                                       ),
                                                     ),
                                                 ],
@@ -771,15 +639,11 @@ class TimerDisplay extends StatelessWidget {
                                     Container(
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: Theme.of(context).colorScheme.surfaceContainer,
                                         borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.08),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
+                                        border: Border.all(
+                                          color: Theme.of(context).colorScheme.outlineVariant,
+                                        ),
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -789,7 +653,7 @@ class TimerDisplay extends StatelessWidget {
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.grey[800],
+                                              color: Theme.of(context).colorScheme.onSurface,
                                             ),
                                           ),
                                           const SizedBox(height: 4),
@@ -799,7 +663,7 @@ class TimerDisplay extends StatelessWidget {
                                               '${entry.key}: ${entry.value}/${entry.value + remaining}',
                                               style: TextStyle(
                                                 fontSize: 11,
-                                                color: Colors.grey[800],
+                                                color: Theme.of(context).colorScheme.onSurface,
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             );
@@ -815,20 +679,7 @@ class TimerDisplay extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
-                  // Прогресс-бар внизу
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 6,
-                        backgroundColor: Colors.grey[300],
-                        valueColor: AlwaysStoppedAnimation<Color>(intervalColor),
-                      ),
-                    ),
-                  ),
+                  // Прогресс перенесён в верхний навигатор-бар
                 ],
               ),
             ),
@@ -852,9 +703,9 @@ class TimerDisplay extends StatelessWidget {
     );
   }
 
-  Widget _buildVerticalLayout() {
+  Widget _buildVerticalLayout(BuildContext context) {
     final intervalType = currentInterval?.type ?? IntervalType.work;
-    final intervalColor = _getIntervalColor(intervalType);
+    final intervalColor = _getIntervalColor(context, intervalType);
 
     return SafeArea(
       child: LayoutBuilder(
@@ -885,7 +736,7 @@ class TimerDisplay extends StatelessWidget {
                         color: intervalColor,
                         shadows: [
                           Shadow(
-                            color: intervalColor.withOpacity(0.4),
+                            color: intervalColor.withValues(alpha: 0.4),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -934,7 +785,7 @@ class TimerDisplay extends StatelessWidget {
                             text: '${currentInterval!.repetitions}',
                             style: TextStyle(
                               fontSize: repsNumberFontSize,
-                              color: intervalColor.withOpacity(0.9),
+                              color: intervalColor.withValues(alpha: 0.9),
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -942,7 +793,7 @@ class TimerDisplay extends StatelessWidget {
                             text: ' пвт.',
                             style: TextStyle(
                               fontSize: repsTextFontSize,
-                              color: intervalColor.withOpacity(0.9),
+                              color: intervalColor.withValues(alpha: 0.9),
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -951,7 +802,7 @@ class TimerDisplay extends StatelessWidget {
                               text: ' × ${currentInterval!.weight!.toStringAsFixed(1)} кг',
                               style: TextStyle(
                                 fontSize: repsNumberFontSize,
-                                color: intervalColor.withOpacity(0.9),
+                                color: intervalColor.withValues(alpha: 0.9),
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
@@ -964,7 +815,7 @@ class TimerDisplay extends StatelessWidget {
                       '${currentInterval!.weight!.toStringAsFixed(1)} кг',
                       style: TextStyle(
                         fontSize: repsNumberFontSize,
-                        color: intervalColor.withOpacity(0.9),
+                        color: intervalColor.withValues(alpha: 0.9),
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -986,7 +837,7 @@ class TimerDisplay extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
-                    color: intervalColor.withOpacity(0.15),
+                    color: intervalColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -1005,10 +856,10 @@ class TimerDisplay extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        '${_formatTime(totalElapsedTime!)}',
+                        _formatTime(totalElapsedTime!),
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey[700],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1016,15 +867,15 @@ class TimerDisplay extends StatelessWidget {
                         ' / ',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey[500],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
-                        '${_formatTime(totalElapsedTime! + totalRemainingTime!)}',
+                        _formatTime(totalElapsedTime! + totalRemainingTime!),
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey[700],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1039,15 +890,11 @@ class TimerDisplay extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     margin: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Theme.of(context).colorScheme.surfaceContainer,
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
                     ),
                     child: Wrap(
                       spacing: 12,
@@ -1060,7 +907,7 @@ class TimerDisplay extends StatelessWidget {
                             '${entry.key}: ${entry.value}/${entry.value + remaining}',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[800],
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w600,
                             ),
                           );
@@ -1073,7 +920,7 @@ class TimerDisplay extends StatelessWidget {
                               '${entry.key}: 0/${entry.value}',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[800],
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.w600,
                               ),
                             );
@@ -1089,15 +936,11 @@ class TimerDisplay extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     margin: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Theme.of(context).colorScheme.surfaceContainer,
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1107,12 +950,12 @@ class TimerDisplay extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 6),
                         ...nextIntervals!.take(2).map((interval) {
-                          final color = _getIntervalColor(interval.type);
+                          final color = _getIntervalColor(context, interval.type);
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 2.0),
                             child: Row(
@@ -1131,7 +974,7 @@ class TimerDisplay extends StatelessWidget {
                                     '${interval.displayName}${interval.type == IntervalType.work && interval.repetitions != null ? ' ×${interval.repetitions}' : ''}${interval.weight != null && interval.weight! > 0 ? ' ×${interval.weight!.toStringAsFixed(1)}кг' : ''}',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.grey[800],
+                                      color: Theme.of(context).colorScheme.onSurface,
                                       fontWeight: FontWeight.w600,
                                     ),
                                     maxLines: 1,
@@ -1143,7 +986,7 @@ class TimerDisplay extends StatelessWidget {
                                     '${interval.duration}с',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                               ],
@@ -1154,20 +997,7 @@ class TimerDisplay extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 6),
-                // Прогресс-бар
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 8,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: AlwaysStoppedAnimation<Color>(intervalColor),
-                    ),
-                  ),
-                ),
+                // Прогресс перенесён в верхний навигатор-бар
               ],
             ),
           );

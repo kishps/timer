@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/workout_template.dart';
 import '../models/workout_interval.dart';
+import '../widgets/primary_action_bar.dart';
+import '../widgets/workout_navigator_bar.dart';
 
 class PreWorkoutScreen extends StatefulWidget {
   final WorkoutTemplate template;
@@ -67,6 +69,7 @@ class _PreWorkoutScreenState extends State<PreWorkoutScreen> {
       ),
       body: Column(
         children: [
+          const WorkoutNavigatorBar(),
           Expanded(
             child: workIntervals.isEmpty
                 ? const Center(
@@ -166,19 +169,7 @@ class _PreWorkoutScreenState extends State<PreWorkoutScreen> {
                   ),
           ),
           // Кнопки действий
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
-                  spreadRadius: 1,
-                  blurRadius: 5,
-                  offset: const Offset(0, -3),
-                ),
-              ],
-            ),
+          PrimaryActionBar(
             child: Row(
               children: [
                 Expanded(
