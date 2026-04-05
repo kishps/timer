@@ -81,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _loadConfigForTemplate() async {
     final config = await _storageService.loadConfig();
+    await AudioHelper.applyDuckExternalAudioSetting(config.duckExternalAudio);
     await _timerService.warmupManualIntervalEstimates(_storageService);
     setState(() {
       _timerService.initializeWithTemplate(
@@ -95,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _loadConfig() async {
     final config = await _storageService.loadConfig();
+    await AudioHelper.applyDuckExternalAudioSetting(config.duckExternalAudio);
     await _timerService.warmupManualIntervalEstimates(_storageService);
     setState(() {
       _config = config;
@@ -355,6 +357,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _startWorkout(WorkoutTemplate template) async {
     await _storageService.updateTemplateLastUsed(template.id);
     final config = await _storageService.loadConfig();
+    await AudioHelper.applyDuckExternalAudioSetting(config.duckExternalAudio);
     await _timerService.warmupManualIntervalEstimates(_storageService);
     setState(() {
       _currentTemplate = template;
@@ -564,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     progress: _timerService.getProgress(),
                     completedRepetitions: _timerService.exercisesCompleted,
                     remainingRepetitions: _timerService.getRemainingRepetitions(),
-                    nextIntervals: _timerService.getNextIntervals(3),
+                    allIntervals: _timerService.intervals,
                     totalElapsedTime: _timerService.getElapsedTime(),
                     totalRemainingTime: _timerService.getRemainingTime(),
                     isManualInterval: _timerService.isManualInterval,
@@ -585,34 +588,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     },
                   ),
                 ),
-              // Кнопка "Следующий" для ручных интервалов
-              if (_timerService.isManualInterval && 
-                  (_timerService.state == TimerState.running || _timerService.state == TimerState.paused))
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 60,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        _timerService.nextInterval();
-                        setState(() {});
-                      },
-                      icon: const Icon(Icons.arrow_forward, size: 28),
-                      label: const Text(
-                        'СЛЕДУЮЩИЙ ИНТЕРВАЛ',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 12),
               // Показываем кнопки управления только если есть выбранная тренировка или тренировка запущена
               if (template != null || _timerService.state != TimerState.idle)
                 ControlButtons(
+                  slotTwoThirds:
+                      _timerService.isManualInterval &&
+                              (_timerService.state == TimerState.running ||
+                                  _timerService.state == TimerState.paused)
+                          ? SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  _timerService.nextInterval();
+                                  setState(() {});
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                icon: const Icon(Icons.arrow_forward, size: 24),
+                                label: const Text(
+                                  'СЛЕДУЮЩИЙ ИНТЕРВАЛ',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : null,
                   state: _timerService.state,
                   onStart: () async {
                     if (template == null && _config == null) {
@@ -630,7 +637,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       );
                       
                       if (updatedTemplate != null) {
+                        final toSave = updatedTemplate.copyWith(lastUsed: DateTime.now());
+                        await _storageService.saveTemplate(toSave);
+                        if (!mounted) return;
+                        await _loadTemplates();
+                        if (!mounted) return;
                         final config = await _storageService.loadConfig();
+                        if (!mounted) return;
+                        await AudioHelper.applyDuckExternalAudioSetting(
+                          config.duckExternalAudio,
+                        );
+                        if (!mounted) return;
                         setState(() {
                           _currentTemplate = updatedTemplate;
                           _timerService.initializeWithTemplate(
@@ -640,13 +657,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             countdownSeconds: config.countdownSeconds,
                           );
                         });
+                        _timerService.start();
+                        setState(() {});
                       } else {
                         return; // Пользователь отменил
                       }
+                    } else {
+                      _timerService.start();
+                      setState(() {});
                     }
-                    
-                    _timerService.start();
-                    setState(() {});
                   },
                   onPause: () {
                     _timerService.pause();
@@ -660,7 +679,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     _showFinishConfirmationDialog();
                   },
                 ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 6),
             ],
           ),
         ),

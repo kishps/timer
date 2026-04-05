@@ -5,6 +5,8 @@ class TimerConfig {
   final bool soundEnabled;
   final bool countdownSoundEnabled; // звук отсчета
   final int countdownSeconds; // за сколько секунд до конца начинать отсчет
+  /// Android: при true запрашивается аудиофокус с duck — музыка из других приложений временно приглушается.
+  final bool duckExternalAudio;
 
   TimerConfig({
     required this.workDuration,
@@ -13,6 +15,7 @@ class TimerConfig {
     this.soundEnabled = true,
     this.countdownSoundEnabled = true,
     this.countdownSeconds = 5,
+    this.duckExternalAudio = true,
   });
 
   Map<String, dynamic> toJson() {
@@ -23,6 +26,7 @@ class TimerConfig {
       'soundEnabled': soundEnabled,
       'countdownSoundEnabled': countdownSoundEnabled,
       'countdownSeconds': countdownSeconds,
+      'duckExternalAudio': duckExternalAudio,
     };
   }
 
@@ -34,6 +38,7 @@ class TimerConfig {
       soundEnabled: json['soundEnabled'] as bool? ?? true,
       countdownSoundEnabled: json['countdownSoundEnabled'] as bool? ?? true,
       countdownSeconds: json['countdownSeconds'] as int? ?? 5,
+      duckExternalAudio: json['duckExternalAudio'] as bool? ?? true,
     );
   }
 
@@ -44,6 +49,7 @@ class TimerConfig {
     bool? soundEnabled,
     bool? countdownSoundEnabled,
     int? countdownSeconds,
+    bool? duckExternalAudio,
   }) {
     return TimerConfig(
       workDuration: workDuration ?? this.workDuration,
@@ -52,6 +58,7 @@ class TimerConfig {
       soundEnabled: soundEnabled ?? this.soundEnabled,
       countdownSoundEnabled: countdownSoundEnabled ?? this.countdownSoundEnabled,
       countdownSeconds: countdownSeconds ?? this.countdownSeconds,
+      duckExternalAudio: duckExternalAudio ?? this.duckExternalAudio,
     );
   }
 
@@ -63,6 +70,7 @@ class TimerConfig {
       soundEnabled: true,
       countdownSoundEnabled: true,
       countdownSeconds: 5,
+      duckExternalAudio: true,
     );
   }
 }

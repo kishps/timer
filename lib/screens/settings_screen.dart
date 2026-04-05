@@ -35,6 +35,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _saveConfig() async {
     await _storageService.saveConfig(_config);
+    try {
+      await AudioHelper.applyDuckExternalAudioSetting(_config.duckExternalAudio);
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('applyDuckExternalAudioSetting: $e\n$st');
+      }
+    }
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Настройки сохранены')),
@@ -85,6 +92,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           ),
+          if (!kIsWeb &&
+              Theme.of(context).platform == TargetPlatform.android) ...[
+            const SizedBox(height: 16),
+            Card(
+              child: SwitchListTile(
+                title: const Text(
+                  'Заглушать внешние звуки',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: const Text(
+                  'Временно приглушать музыку из других приложений при сигналах таймера (Android)',
+                ),
+                value: _config.duckExternalAudio,
+                onChanged: (value) {
+                  setState(() {
+                    _config = _config.copyWith(duckExternalAudio: value);
+                  });
+                },
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           // Звук отсчета
           Card(

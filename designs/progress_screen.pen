@@ -1,0 +1,1048 @@
+{
+  "version": "2.9",
+  "children": [
+    {
+      "id": "progressScreen",
+      "type": "frame",
+      "name": "Экран Прогресс",
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 1280,
+      "fill": "#F5EFF7",
+      "layout": "vertical",
+      "clip": true,
+      "children": [
+        {
+          "id": "appBar",
+          "type": "frame",
+          "name": "AppBar",
+          "width": "fill_container",
+          "height": 56,
+          "fill": "#FEF7FF",
+          "layout": "horizontal",
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "stroke": {
+            "thickness": { "bottom": 1 },
+            "fill": "#E7E0EC"
+          },
+          "children": [
+            {
+              "id": "appBarTitle",
+              "type": "text",
+              "content": "Прогресс",
+              "fontSize": 22,
+              "fontWeight": "600",
+              "fill": "#1C1B1F",
+              "textGrowth": "auto"
+            },
+            {
+              "id": "filterIcon",
+              "type": "icon_font",
+              "iconFontFamily": "lucide",
+              "iconFontName": "list-filter",
+              "width": 24,
+              "height": 24,
+              "fill": "#1C1B1F"
+            }
+          ]
+        },
+        {
+          "id": "scrollContent",
+          "type": "frame",
+          "name": "Контент",
+          "width": "fill_container",
+          "height": "fit_content",
+          "layout": "vertical",
+          "padding": 16,
+          "gap": 14,
+          "children": [
+            {
+              "id": "navPlaceholder",
+              "type": "frame",
+              "name": "WorkoutNavigatorBar placeholder",
+              "width": "fill_container",
+              "height": 36,
+              "fill": "#E8DEF8",
+              "cornerRadius": 8,
+              "layout": "vertical",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "padding": 8,
+              "children": [
+                {
+                  "id": "navHint",
+                  "type": "text",
+                  "content": "Полоса таймера (при активной тренировке)",
+                  "fontSize": 11,
+                  "fill": "#49454F",
+                  "textGrowth": "auto"
+                }
+              ]
+            },
+            {
+              "id": "cardStats",
+              "type": "frame",
+              "name": "Общая статистика",
+              "width": "fill_container",
+              "height": "fit_content",
+              "fill": "#FFFFFF",
+              "cornerRadius": 12,
+              "layout": "vertical",
+              "padding": 16,
+              "gap": 14,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "offset": { "x": 0, "y": 1 },
+                "blur": 3,
+                "spread": 0,
+                "color": "#00000022"
+              },
+              "children": [
+                {
+                  "id": "statsTitle",
+                  "type": "text",
+                  "content": "Общая статистика",
+                  "fontSize": 20,
+                  "fontWeight": "700",
+                  "fill": "#1C1B1F",
+                  "textGrowth": "auto"
+                },
+                {
+                  "id": "statRow1",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "layout": "horizontal",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "statRow1Left",
+                      "type": "frame",
+                      "layout": "horizontal",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "height": "fit_content",
+                      "width": "fit_content",
+                      "children": [
+                        {
+                          "id": "stat1Icon",
+                          "type": "rectangle",
+                          "width": 36,
+                          "height": 36,
+                          "cornerRadius": 8,
+                          "fill": "#E8DEF8"
+                        },
+                        {
+                          "id": "stat1Label",
+                          "type": "text",
+                          "content": "Выполнено тренировок",
+                          "fontSize": 15,
+                          "fill": "#49454F",
+                          "textGrowth": "auto"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "stat1Val",
+                      "type": "text",
+                      "content": "24",
+                      "fontSize": 18,
+                      "fontWeight": "700",
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    }
+                  ]
+                },
+                {
+                  "id": "statRow2",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "layout": "horizontal",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "statRow2Left",
+                      "type": "frame",
+                      "layout": "horizontal",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "height": "fit_content",
+                      "width": "fit_content",
+                      "children": [
+                        {
+                          "id": "stat2Icon",
+                          "type": "rectangle",
+                          "width": 36,
+                          "height": 36,
+                          "cornerRadius": 8,
+                          "fill": "#E8DEF8"
+                        },
+                        {
+                          "id": "stat2Label",
+                          "type": "text",
+                          "content": "Общее время",
+                          "fontSize": 15,
+                          "fill": "#49454F",
+                          "textGrowth": "auto"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "stat2Val",
+                      "type": "text",
+                      "content": "12 ч 40 мин",
+                      "fontSize": 18,
+                      "fontWeight": "700",
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    }
+                  ]
+                },
+                {
+                  "id": "statRow3",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "layout": "horizontal",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "statRow3Left",
+                      "type": "frame",
+                      "layout": "horizontal",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "height": "fit_content",
+                      "width": "fit_content",
+                      "children": [
+                        {
+                          "id": "stat3Icon",
+                          "type": "rectangle",
+                          "width": 36,
+                          "height": 36,
+                          "cornerRadius": 8,
+                          "fill": "#E8DEF8"
+                        },
+                        {
+                          "id": "stat3Label",
+                          "type": "text",
+                          "content": "Средняя длительность",
+                          "fontSize": 15,
+                          "fill": "#49454F",
+                          "textGrowth": "auto"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "stat3Val",
+                      "type": "text",
+                      "content": "32 мин",
+                      "fontSize": 18,
+                      "fontWeight": "700",
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    }
+                  ]
+                },
+                {
+                  "id": "statRow4",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "layout": "horizontal",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "statRow4Left",
+                      "type": "frame",
+                      "layout": "horizontal",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "height": "fit_content",
+                      "width": "fit_content",
+                      "children": [
+                        {
+                          "id": "stat4Icon",
+                          "type": "rectangle",
+                          "width": 36,
+                          "height": 36,
+                          "cornerRadius": 8,
+                          "fill": "#E8DEF8"
+                        },
+                        {
+                          "id": "stat4Label",
+                          "type": "text",
+                          "content": "Всего повторений",
+                          "fontSize": 15,
+                          "fill": "#49454F",
+                          "textGrowth": "auto"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "stat4Val",
+                      "type": "text",
+                      "content": "1 420",
+                      "fontSize": 18,
+                      "fontWeight": "700",
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    }
+                  ]
+                },
+                {
+                  "id": "statRow5",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "layout": "horizontal",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "statRow5Left",
+                      "type": "frame",
+                      "layout": "horizontal",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "height": "fit_content",
+                      "width": "fit_content",
+                      "children": [
+                        {
+                          "id": "stat5Icon",
+                          "type": "rectangle",
+                          "width": 36,
+                          "height": 36,
+                          "cornerRadius": 8,
+                          "fill": "#E8DEF8"
+                        },
+                        {
+                          "id": "stat5Label",
+                          "type": "text",
+                          "content": "Общий поднятый вес",
+                          "fontSize": 15,
+                          "fill": "#49454F",
+                          "textGrowth": "auto"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "stat5Val",
+                      "type": "text",
+                      "content": "4 850.0 кг",
+                      "fontSize": 18,
+                      "fontWeight": "700",
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "cardCompare",
+              "type": "frame",
+              "name": "Сравнение тренировок",
+              "width": "fill_container",
+              "height": "fit_content",
+              "fill": "#FFFFFF",
+              "cornerRadius": 12,
+              "layout": "vertical",
+              "padding": 16,
+              "gap": 10,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "offset": { "x": 0, "y": 1 },
+                "blur": 3,
+                "spread": 0,
+                "color": "#00000022"
+              },
+              "children": [
+                {
+                  "id": "compareTitle",
+                  "type": "text",
+                  "content": "Сравнение тренировок",
+                  "fontSize": 20,
+                  "fontWeight": "700",
+                  "fill": "#1C1B1F",
+                  "textGrowth": "auto"
+                },
+                {
+                  "id": "compareBody",
+                  "type": "text",
+                  "content": "Выберите шаблон через фильтр, чтобы сравнить последнюю тренировку с предыдущей и увидеть изменения по упражнениям.",
+                  "fontSize": 14,
+                  "fill": "#49454F",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "lineHeight": 1.35
+                }
+              ]
+            },
+            {
+              "id": "cardExercises",
+              "type": "frame",
+              "name": "Упражнения",
+              "width": "fill_container",
+              "height": "fit_content",
+              "fill": "#FFFFFF",
+              "cornerRadius": 12,
+              "layout": "vertical",
+              "padding": 16,
+              "gap": 12,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "offset": { "x": 0, "y": 1 },
+                "blur": 3,
+                "spread": 0,
+                "color": "#00000022"
+              },
+              "children": [
+                {
+                  "id": "exTitle",
+                  "type": "text",
+                  "content": "Упражнения",
+                  "fontSize": 20,
+                  "fontWeight": "700",
+                  "fill": "#1C1B1F",
+                  "textGrowth": "auto"
+                },
+                {
+                  "id": "exRow1",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "layout": "horizontal",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "ex1n",
+                      "type": "text",
+                      "content": "Жим лёжа",
+                      "fontSize": 16,
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "ex1c",
+                      "type": "text",
+                      "content": "48",
+                      "fontSize": 16,
+                      "fontWeight": "700",
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    }
+                  ]
+                },
+                {
+                  "id": "exRow2",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "layout": "horizontal",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "ex2n",
+                      "type": "text",
+                      "content": "Приседания",
+                      "fontSize": 16,
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "ex2c",
+                      "type": "text",
+                      "content": "36",
+                      "fontSize": 16,
+                      "fontWeight": "700",
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    }
+                  ]
+                },
+                {
+                  "id": "exRow3",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "layout": "horizontal",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "ex3n",
+                      "type": "text",
+                      "content": "Тяга верхнего блока",
+                      "fontSize": 16,
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "ex3c",
+                      "type": "text",
+                      "content": "32",
+                      "fontSize": 16,
+                      "fontWeight": "700",
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    }
+                  ]
+                },
+                {
+                  "id": "exRow4",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "layout": "horizontal",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "ex4n",
+                      "type": "text",
+                      "content": "Планка",
+                      "fontSize": 16,
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "ex4c",
+                      "type": "text",
+                      "content": "28",
+                      "fontSize": 16,
+                      "fontWeight": "700",
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "cardWeekly",
+              "type": "frame",
+              "name": "Активность по дням",
+              "width": "fill_container",
+              "height": "fit_content",
+              "fill": "#FFFFFF",
+              "cornerRadius": 12,
+              "layout": "vertical",
+              "padding": 16,
+              "gap": 16,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "offset": { "x": 0, "y": 1 },
+                "blur": 3,
+                "spread": 0,
+                "color": "#00000022"
+              },
+              "children": [
+                {
+                  "id": "weeklyTitle",
+                  "type": "text",
+                  "content": "Активность по дням",
+                  "fontSize": 20,
+                  "fontWeight": "700",
+                  "fill": "#1C1B1F",
+                  "textGrowth": "auto"
+                },
+                {
+                  "id": "weeklyChart",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "height": 150,
+                  "layout": "horizontal",
+                  "justifyContent": "space_between",
+                  "alignItems": "end",
+                  "padding": [0, 4, 0, 4],
+                  "children": [
+                    {
+                      "id": "wcol0",
+                      "type": "frame",
+                      "width": 40,
+                      "height": 150,
+                      "layout": "vertical",
+                      "justifyContent": "end",
+                      "alignItems": "center",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "id": "wbar0",
+                          "type": "rectangle",
+                          "width": 28,
+                          "height": 40,
+                          "cornerRadius": 4,
+                          "fill": "#6750A4"
+                        },
+                        {
+                          "id": "wd0",
+                          "type": "text",
+                          "content": "20.03",
+                          "fontSize": 10,
+                          "fill": "#49454F",
+                          "textGrowth": "auto"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "wcol1",
+                      "type": "frame",
+                      "width": 40,
+                      "height": 150,
+                      "layout": "vertical",
+                      "justifyContent": "end",
+                      "alignItems": "center",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "id": "wbar1",
+                          "type": "rectangle",
+                          "width": 28,
+                          "height": 80,
+                          "cornerRadius": 4,
+                          "fill": "#6750A4"
+                        },
+                        {
+                          "id": "wd1",
+                          "type": "text",
+                          "content": "21.03",
+                          "fontSize": 10,
+                          "fill": "#49454F",
+                          "textGrowth": "auto"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "wcol2",
+                      "type": "frame",
+                      "width": 40,
+                      "height": 150,
+                      "layout": "vertical",
+                      "justifyContent": "end",
+                      "alignItems": "center",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "id": "wbar2",
+                          "type": "rectangle",
+                          "width": 28,
+                          "height": 8,
+                          "cornerRadius": 4,
+                          "fill": "#6750A4"
+                        },
+                        {
+                          "id": "wd2",
+                          "type": "text",
+                          "content": "22.03",
+                          "fontSize": 10,
+                          "fill": "#49454F",
+                          "textGrowth": "auto"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "wcol3",
+                      "type": "frame",
+                      "width": 40,
+                      "height": 150,
+                      "layout": "vertical",
+                      "justifyContent": "end",
+                      "alignItems": "center",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "id": "wbar3",
+                          "type": "rectangle",
+                          "width": 28,
+                          "height": 40,
+                          "cornerRadius": 4,
+                          "fill": "#6750A4"
+                        },
+                        {
+                          "id": "wd3",
+                          "type": "text",
+                          "content": "23.03",
+                          "fontSize": 10,
+                          "fill": "#49454F",
+                          "textGrowth": "auto"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "wcol4",
+                      "type": "frame",
+                      "width": 40,
+                      "height": 150,
+                      "layout": "vertical",
+                      "justifyContent": "end",
+                      "alignItems": "center",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "id": "wbar4",
+                          "type": "rectangle",
+                          "width": 28,
+                          "height": 120,
+                          "cornerRadius": 4,
+                          "fill": "#6750A4"
+                        },
+                        {
+                          "id": "wd4",
+                          "type": "text",
+                          "content": "24.03",
+                          "fontSize": 10,
+                          "fill": "#49454F",
+                          "textGrowth": "auto"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "wcol5",
+                      "type": "frame",
+                      "width": 40,
+                      "height": 150,
+                      "layout": "vertical",
+                      "justifyContent": "end",
+                      "alignItems": "center",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "id": "wbar5",
+                          "type": "rectangle",
+                          "width": 28,
+                          "height": 40,
+                          "cornerRadius": 4,
+                          "fill": "#6750A4"
+                        },
+                        {
+                          "id": "wd5",
+                          "type": "text",
+                          "content": "25.03",
+                          "fontSize": 10,
+                          "fill": "#49454F",
+                          "textGrowth": "auto"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "wcol6",
+                      "type": "frame",
+                      "width": 40,
+                      "height": 150,
+                      "layout": "vertical",
+                      "justifyContent": "end",
+                      "alignItems": "center",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "id": "wbar6",
+                          "type": "rectangle",
+                          "width": 28,
+                          "height": 8,
+                          "cornerRadius": 4,
+                          "fill": "#6750A4"
+                        },
+                        {
+                          "id": "wd6",
+                          "type": "text",
+                          "content": "26.03",
+                          "fontSize": 10,
+                          "fill": "#49454F",
+                          "textGrowth": "auto"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "recentHeading",
+              "type": "text",
+              "content": "Последние тренировки",
+              "fontSize": 20,
+              "fontWeight": "700",
+              "fill": "#1C1B1F",
+              "textGrowth": "auto"
+            },
+            {
+              "id": "session1",
+              "type": "frame",
+              "name": "Сессия 1",
+              "width": "fill_container",
+              "height": "fit_content",
+              "fill": "#FFFFFF",
+              "cornerRadius": 12,
+              "layout": "horizontal",
+              "padding": 12,
+              "gap": 12,
+              "alignItems": "center",
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "offset": { "x": 0, "y": 1 },
+                "blur": 2,
+                "spread": 0,
+                "color": "#00000018"
+              },
+              "children": [
+                {
+                  "id": "av1",
+                  "type": "frame",
+                  "width": 48,
+                  "height": 48,
+                  "cornerRadius": 24,
+                  "fill": "#E8DEF8",
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "av1ic",
+                      "type": "icon_font",
+                      "iconFontFamily": "lucide",
+                      "iconFontName": "dumbbell",
+                      "width": 22,
+                      "height": 22,
+                      "fill": "#6750A4"
+                    }
+                  ]
+                },
+                {
+                  "id": "s1text",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "id": "s1t",
+                      "type": "text",
+                      "content": "Верх тела — сила",
+                      "fontSize": 16,
+                      "fontWeight": "700",
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "s1d",
+                      "type": "text",
+                      "content": "26 марта 2026 г.",
+                      "fontSize": 13,
+                      "fill": "#49454F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "s1dur",
+                      "type": "text",
+                      "content": "Длительность: 52 мин",
+                      "fontSize": 13,
+                      "fill": "#49454F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "s1rep",
+                      "type": "text",
+                      "content": "Повторений: 156",
+                      "fontSize": 13,
+                      "fill": "#49454F",
+                      "textGrowth": "auto"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "session2",
+              "type": "frame",
+              "name": "Сессия 2",
+              "width": "fill_container",
+              "height": "fit_content",
+              "fill": "#FFFFFF",
+              "cornerRadius": 12,
+              "layout": "horizontal",
+              "padding": 12,
+              "gap": 12,
+              "alignItems": "center",
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "offset": { "x": 0, "y": 1 },
+                "blur": 2,
+                "spread": 0,
+                "color": "#00000018"
+              },
+              "children": [
+                {
+                  "id": "av2",
+                  "type": "frame",
+                  "width": 48,
+                  "height": 48,
+                  "cornerRadius": 24,
+                  "fill": "#E8DEF8",
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "av2ic",
+                      "type": "icon_font",
+                      "iconFontFamily": "lucide",
+                      "iconFontName": "dumbbell",
+                      "width": 22,
+                      "height": 22,
+                      "fill": "#6750A4"
+                    }
+                  ]
+                },
+                {
+                  "id": "s2text",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "id": "s2t",
+                      "type": "text",
+                      "content": "Ноги + кардио",
+                      "fontSize": 16,
+                      "fontWeight": "700",
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "s2d",
+                      "type": "text",
+                      "content": "24 марта 2026 г.",
+                      "fontSize": 13,
+                      "fill": "#49454F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "s2dur",
+                      "type": "text",
+                      "content": "Длительность: 48 мин",
+                      "fontSize": 13,
+                      "fill": "#49454F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "s2rep",
+                      "type": "text",
+                      "content": "Повторений: 132",
+                      "fontSize": 13,
+                      "fill": "#49454F",
+                      "textGrowth": "auto"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "session3",
+              "type": "frame",
+              "name": "Сессия 3",
+              "width": "fill_container",
+              "height": "fit_content",
+              "fill": "#FFFFFF",
+              "cornerRadius": 12,
+              "layout": "horizontal",
+              "padding": 12,
+              "gap": 12,
+              "alignItems": "center",
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "offset": { "x": 0, "y": 1 },
+                "blur": 2,
+                "spread": 0,
+                "color": "#00000018"
+              },
+              "children": [
+                {
+                  "id": "av3",
+                  "type": "frame",
+                  "width": 48,
+                  "height": 48,
+                  "cornerRadius": 24,
+                  "fill": "#E8DEF8",
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "av3ic",
+                      "type": "icon_font",
+                      "iconFontFamily": "lucide",
+                      "iconFontName": "dumbbell",
+                      "width": 22,
+                      "height": 22,
+                      "fill": "#6750A4"
+                    }
+                  ]
+                },
+                {
+                  "id": "s3text",
+                  "type": "frame",
+                  "width": "fill_container",
+                  "height": "fit_content",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "id": "s3t",
+                      "type": "text",
+                      "content": "Полное тело",
+                      "fontSize": 16,
+                      "fontWeight": "700",
+                      "fill": "#1C1B1F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "s3d",
+                      "type": "text",
+                      "content": "22 марта 2026 г.",
+                      "fontSize": 13,
+                      "fill": "#49454F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "s3dur",
+                      "type": "text",
+                      "content": "Длительность: 38 мин",
+                      "fontSize": 13,
+                      "fill": "#49454F",
+                      "textGrowth": "auto"
+                    },
+                    {
+                      "id": "s3rep",
+                      "type": "text",
+                      "content": "Повторений: 98",
+                      "fontSize": 13,
+                      "fill": "#49454F",
+                      "textGrowth": "auto"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

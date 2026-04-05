@@ -11,52 +11,94 @@ class AudioHelper {
   static const String _customBeepKey = 'custom_beep_sound';
   static const String _customCountdownKey = 'custom_countdown_sound';
   static bool _initialized = false;
+  /// Соответствует [TimerConfig.duckExternalAudio]: при true — приглушать музыку из других приложений (Android duck).
+  static bool _duckExternalAudio = true;
+
+  /// Сериализация параллельных вызовов [ _initialize ] / [applyDuckExternalAudioSetting] / [reinitialize].
+  static Future<void>? _ongoingInit;
+
+  /// Вызывать после загрузки/сохранения конфига, чтобы применить аудиофокус до воспроизведения.
+  static Future<void> applyDuckExternalAudioSetting(bool duckExternalAudio) async {
+    if (kIsWeb) return;
+    // На iOS/desktop меняется только флаг; нативный Android audio focus там не применяется.
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      _duckExternalAudio = duckExternalAudio;
+      return;
+    }
+    if (_duckExternalAudio == duckExternalAudio && _initialized) return;
+    _duckExternalAudio = duckExternalAudio;
+    _initialized = false;
+    await _initialize();
+  }
 
   // Инициализация аудио плеера для фонового воспроизведения
   static Future<void> _initialize() async {
     if (_initialized || kIsWeb) return;
+    while (_ongoingInit != null) {
+      await _ongoingInit;
+      if (_initialized) return;
+    }
+    if (_initialized) return;
+    _ongoingInit = _runInitialization();
     try {
+      await _ongoingInit;
+    } finally {
+      _ongoingInit = null;
+    }
+  }
+
+  static Future<void> _runInitialization() async {
+    if (_initialized || kIsWeb) return;
+    try {
+      final androidFocus = _duckExternalAudio
+          ? AndroidAudioFocus.gainTransientMayDuck
+          : AndroidAudioFocus.none;
       // Сначала настраиваем аудио-контекст, чтобы он применялся до всех вызовов play()
-      // Настройка аудио-фокуса для Android, чтобы не прерывать фоновую музыку
-      // Используем gainTransientMayDuck — звуки воспроизводятся,
-      // музыка временно приглушается и не ставится на паузу
+      // gainTransientMayDuck — кратковременный фокус, внешняя музыка приглушается (duck), без паузы
+      // none — не запрашиваем фокус, громкость внешней музыки не меняется
       await _player.setAudioContext(
-        const AudioContext(
+        AudioContext(
           android: AudioContextAndroid(
             isSpeakerphoneOn: false,
             stayAwake: false,
             // Используем медиа-атрибуты, чтобы звук шел по основному аудио-потоку
             contentType: AndroidContentType.music,
             usageType: AndroidUsageType.media,
-            audioFocus: AndroidAudioFocus.gainTransientMayDuck, // Лёгкое приглушение вместо паузы
+            audioFocus: androidFocus,
           ),
-          iOS: AudioContextIOS(
+          iOS: const AudioContextIOS(
             category: AVAudioSessionCategory.ambient,
             options: [],
           ),
         ),
       );
-      
+
       // Для совместимости и стабильности используем mediaPlayer
       await _player.setPlayerMode(PlayerMode.mediaPlayer);
       // Освобождаем ресурсы и фокус после завершения звука
       await _player.setReleaseMode(ReleaseMode.release);
-      
+
       if (kDebugMode) {
-        print('Аудио плеер инициализирован: gainTransientMayDuck, mediaPlayer, ReleaseMode.release');
+        print(
+          'Аудио плеер инициализирован: duckExternal=$_duckExternalAudio ($androidFocus), mediaPlayer, ReleaseMode.release',
+        );
       }
-      
+
       _initialized = true;
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (kDebugMode) {
         print('Ошибка инициализации аудио плеера: $e');
-        print('Стек ошибки: ${StackTrace.current}');
+        print('Стек: $stackTrace');
       }
     }
   }
 
   // Переинициализация аудио-контекста (для восстановления после потери фокуса)
   static Future<void> reinitialize() async {
+    if (kIsWeb) return;
+    if (_ongoingInit != null) {
+      await _ongoingInit;
+    }
     _initialized = false;
     await _initialize();
   }
@@ -353,6 +395,7 @@ class AudioHelper {
   }
 
   static void dispose() {
+    _initialized = false;
     _player.dispose();
   }
 }
